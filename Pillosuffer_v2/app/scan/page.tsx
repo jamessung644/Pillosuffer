@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { maskPII, parseDrugs } from '@/lib/masking'
+import { compressImage } from '@/lib/image'
 import type { ScanSession } from '@/types'
 
 type Step = 'upload' | 'processing'
@@ -34,8 +35,9 @@ export default function ScanPage() {
       setProgress(20)
       setStatusText('Vision API 연결 중')
 
+      const compressed = await compressImage(file)
       const formData = new FormData()
-      formData.append('image', file)
+      formData.append('image', compressed, 'scan.jpg')
 
       setProgress(30)
       setStatusText('텍스트 인식 중')
@@ -45,6 +47,7 @@ export default function ScanPage() {
       setProgress(75)
 
       if (!res.ok) {
+        if (res.status === 413) throw new Error('이미지 용량이 너무 큽니다. 더 작은 사진으로 다시 시도해 주세요.')
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `OCR 오류 (${res.status})`)
       }

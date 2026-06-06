@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
 import { useAuth } from '@/components/AuthProvider'
+import { compressImage } from '@/lib/image'
 
 const COMMON_FOODS = [
   '자몽', '우유', '알코올', '녹차', '커피',
@@ -90,8 +91,9 @@ export default function FoodPage() {
     setRecognizing(true)
     setError(null)
     try {
+      const compressed = await compressImage(file)
       const formData = new FormData()
-      formData.append('image', file)
+      formData.append('image', compressed, 'food.jpg')
       const res = await fetch('/api/food-recognize', { method: 'POST', body: formData })
       const data = await res.json()
       if (data.items?.length) {

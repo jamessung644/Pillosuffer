@@ -1,336 +1,1896 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PilloSuffer 개발 보고서</title>
-<style>
-  :root{
-    --blue:#2563eb; --blue-dark:#1e40af; --teal:#14b8a6;
-    --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f1f5f9; --card:#ffffff;
-    --amber:#f59e0b; --red:#ef4444; --green:#16a34a;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{
-    font-family:'Pretendard','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-    color:var(--ink);background:var(--bg);line-height:1.65;-webkit-font-smoothing:antialiased;
-  }
-  /* ===== 상단 네비 ===== */
-  nav{
-    position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--line);
-  }
-  .nav-inner{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:6px;padding:10px 20px;flex-wrap:wrap}
-  .nav-inner .brand{font-weight:800;color:var(--blue);margin-right:auto;font-size:15px;letter-spacing:-.3px}
-  nav a{font-size:13px;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:8px;font-weight:600;white-space:nowrap}
-  nav a:hover{background:var(--bg);color:var(--ink)}
-  nav a.active{background:var(--blue);color:#fff}
-  .print-btn{font-size:13px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700;color:var(--ink)}
-  .print-btn:hover{border-color:var(--blue);color:var(--blue)}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PilloSuffer 개발 보고서</title>
+  <style>
+    :root {
+      --blue: #2563eb;
+      --blue-dark: #1e40af;
+      --teal: #14b8a6;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --green: #16a34a;
+    }
 
-  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
-  section{padding:54px 0;border-bottom:1px solid var(--line)}
-  section:last-child{border-bottom:0}
-  h2{font-size:26px;letter-spacing:-.6px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
-  h2 .num{font-size:14px;color:#fff;background:var(--blue);width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;font-weight:800}
-  .sub{color:var(--muted);font-size:14px;margin-bottom:26px}
-  h3{font-size:16px;margin:24px 0 10px;letter-spacing:-.3px}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
 
-  /* ===== 표지 ===== */
-  .hero{background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 55%,#0ea5e9 100%);color:#fff;padding:70px 0 60px;border:0}
-  .hero .wrap{text-align:center}
-  .hero .pill{display:inline-block;background:rgba(255,255,255,.18);padding:6px 14px;border-radius:999px;font-size:13px;font-weight:700;margin-bottom:18px;backdrop-filter:blur(4px)}
-  .hero h1{font-size:44px;letter-spacing:-1.5px;font-weight:800;margin-bottom:12px}
-  .hero p{font-size:17px;opacity:.92;max-width:640px;margin:0 auto}
-  .hero .meta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:34px}
-  .hero .meta div{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:14px 20px;min-width:140px}
-  .hero .meta .k{font-size:12px;opacity:.8;font-weight:600}
-  .hero .meta .v{font-size:18px;font-weight:800;margin-top:3px}
+    html {
+      scroll-behavior: smooth
+    }
 
-  .grid{display:grid;gap:16px}
-  .g2{grid-template-columns:repeat(2,1fr)}
-  .g3{grid-template-columns:repeat(3,1fr)}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
-  .card h4{font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-  .card p{font-size:13.5px;color:var(--muted)}
-  .tag{display:inline-block;background:#eff6ff;color:var(--blue);font-size:12px;font-weight:700;padding:3px 9px;border-radius:7px;margin:3px 4px 0 0}
-  .tag.teal{background:#f0fdfa;color:#0d9488}
-  .tag.amber{background:#fffbeb;color:#b45309}
-  .tag.gray{background:#f1f5f9;color:#475569}
+    body {
+      font-family: 'Pretendard', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased
+    }
 
-  /* ===== 기술스택 ===== */
-  .stack-row{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
-  .stack-cat{font-weight:800;font-size:14px;display:flex;flex-direction:column;gap:2px}
-  .stack-cat small{font-weight:600;color:var(--muted);font-size:11.5px}
-  .stack-items{display:flex;flex-wrap:wrap;gap:7px}
-  .chip{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:13px;font-weight:600}
-  .chip b{font-weight:800}
-  .chip small{color:var(--muted);font-weight:500;margin-left:4px;font-size:11.5px}
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, .88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line)
+    }
 
-  /* ===== 파이프라인 ===== */
-  .pipe{display:flex;flex-direction:column;gap:10px}
-  .stage{background:#fff;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:12px;padding:14px 18px}
-  .stage .st{font-size:12px;font-weight:800;color:var(--blue);letter-spacing:.3px}
-  .stage .sd{font-size:14px;margin-top:3px}
-  .stage code{background:#eef2ff;color:#3730a3;padding:1px 6px;border-radius:5px;font-size:12.5px}
-  .arrow{text-align:center;color:#cbd5e1;font-size:18px;line-height:.6}
-  .flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .flow .node{flex:1;min-width:120px;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;text-align:center}
-  .flow .node b{display:block;font-size:12px;color:var(--blue)}
-  .flow .sep{align-self:center;color:#94a3b8;font-weight:800}
+    .nav-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 20px;
+      flex-wrap: wrap
+    }
 
-  /* ===== 타임라인 ===== */
-  .timeline{position:relative;margin-left:8px;padding-left:26px;border-left:2px solid var(--line)}
-  .tl{position:relative;margin-bottom:22px}
-  .tl::before{content:'';position:absolute;left:-34px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 2px var(--blue)}
-  .tl .date{font-size:12px;font-weight:800;color:var(--blue)}
-  .tl h4{font-size:15.5px;margin:2px 0 4px}
-  .tl p{font-size:13.5px;color:var(--muted)}
-  .tl .files{margin-top:6px}
-  .tl .files code{font-size:11.5px;background:#f1f5f9;color:#475569;padding:2px 7px;border-radius:6px;margin-right:5px;display:inline-block;margin-top:3px}
+    .nav-inner .brand {
+      font-weight: 800;
+      color: var(--blue);
+      margin-right: auto;
+      font-size: 15px;
+      letter-spacing: -.3px
+    }
 
-  /* ===== 프롬프트 ===== */
-  .pp{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:30px 1fr;gap:12px}
-  .pp .n{width:26px;height:26px;border-radius:8px;background:var(--ink);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
-  .pp .q{font-size:14.5px;font-weight:600;color:var(--ink)}
-  .pp .r{font-size:13px;color:var(--muted);margin-top:4px}
-  .pp .r::before{content:'↳ ';color:var(--teal);font-weight:800}
+    nav a {
+      font-size: 12.5px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 9px;
+      border-radius: 8px;
+      font-weight: 600;
+      white-space: nowrap
+    }
 
-  /* ===== 토큰 ===== */
-  .token-total{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:22px}
-  .token-total .box{flex:1;min-width:160px;background:linear-gradient(135deg,#2563eb,#0ea5e9);color:#fff;border-radius:16px;padding:18px 20px}
-  .token-total .box.alt{background:linear-gradient(135deg,#0f766e,#14b8a6)}
-  .token-total .box.gray{background:#fff;border:1px solid var(--line);color:var(--ink)}
-  .token-total .k{font-size:12.5px;opacity:.85;font-weight:600}
-  .token-total .v{font-size:30px;font-weight:800;letter-spacing:-1px;margin-top:2px}
-  .bar-row{display:grid;grid-template-columns:180px 1fr 84px;gap:12px;align-items:center;margin-bottom:9px;font-size:13px}
-  .bar-track{background:#e2e8f0;border-radius:999px;height:16px;overflow:hidden}
-  .bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#2563eb,#38bdf8)}
-  .bar-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--muted)}
-  .note{font-size:12.5px;color:var(--muted);background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-top:16px}
-  .note b{color:#b45309}
+    nav a:hover {
+      background: var(--bg);
+      color: var(--ink)
+    }
 
-  /* ===== 코드 ===== */
-  .code{margin:14px 0;border-radius:14px;overflow:hidden;border:1px solid #1e293b;background:#0f172a}
-  .code .bar{display:flex;align-items:center;justify-content:space-between;background:#1e293b;padding:9px 14px}
-  .code .bar .file{font-size:12.5px;color:#cbd5e1;font-weight:700;font-family:ui-monospace,Menlo,monospace}
-  .code .bar .copy{font-size:12px;background:#334155;color:#e2e8f0;border:0;border-radius:7px;padding:5px 11px;cursor:pointer;font-weight:700}
-  .code .bar .copy:hover{background:#475569}
-  .code pre{margin:0;padding:16px;overflow-x:auto;font-size:12.7px;line-height:1.6;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e2e8f0}
-  .code .desc{background:#0b1220;color:#94a3b8;font-size:12.5px;padding:8px 14px;border-top:1px solid #1e293b}
-  .code .k{color:#7dd3fc}
-  .code .s{color:#fcd34d}
-  .code .c{color:#64748b;font-style:italic}
+    nav a.active {
+      background: var(--blue);
+      color: #fff
+    }
 
-  .result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-  .res{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;border-top:4px solid var(--green)}
-  .res.warn{border-top-color:var(--amber)}
-  .res h4{font-size:15px;margin-bottom:6px}
-  .res .ba{font-size:13px;color:var(--muted);margin-top:8px}
-  .res .ba .bad{color:var(--red);font-weight:700}
-  .res .ba .good{color:var(--green);font-weight:700}
+    .print-btn {
+      font-size: 12.5px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--ink)
+    }
 
-  footer{text-align:center;padding:34px 20px;color:var(--muted);font-size:13px}
+    .print-btn:hover {
+      border-color: var(--blue);
+      color: var(--blue)
+    }
 
-  @media(max-width:760px){
-    .g2,.g3,.result-grid{grid-template-columns:1fr}
-    .stack-row{grid-template-columns:1fr}
-    .hero h1{font-size:32px}
-    .bar-row{grid-template-columns:110px 1fr 64px}
-    nav a{display:none}
-    nav a.show-m{display:inline}
-  }
-  @media print{
-    nav{display:none}
-    body{background:#fff}
-    section{padding:22px 0;border-bottom:1px solid #ddd;break-inside:avoid}
-    .hero{padding:36px 0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .code,.card,.stage,.res{break-inside:avoid}
-    .code pre{white-space:pre-wrap;word-break:break-word}
-    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  }
-</style>
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 20px
+    }
+
+    section {
+      padding: 52px 0;
+      border-bottom: 1px solid var(--line)
+    }
+
+    section:last-child {
+      border-bottom: 0
+    }
+
+    h2 {
+      font-size: 25px;
+      letter-spacing: -.6px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    h2 .num {
+      font-size: 14px;
+      color: #fff;
+      background: var(--blue);
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      flex-shrink: 0
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 24px
+    }
+
+    h3 {
+      font-size: 16.5px;
+      margin: 26px 0 10px;
+      letter-spacing: -.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    h3 .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal)
+    }
+
+    p.lead {
+      font-size: 14.5px;
+      color: #334155;
+      margin-bottom: 14px
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px
+    }
+
+    .g2 {
+      grid-template-columns: repeat(2, 1fr)
+    }
+
+    .g3 {
+      grid-template-columns: repeat(3, 1fr)
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px
+    }
+
+    .card h4 {
+      font-size: 15px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .card p {
+      font-size: 13.5px;
+      color: var(--muted)
+    }
+
+    /* hero */
+    .hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #0ea5e9 100%);
+      color: #fff;
+      padding: 66px 0 56px;
+      border: 0
+    }
+
+    .hero .wrap {
+      text-align: center
+    }
+
+    .hero .pill {
+      display: inline-block;
+      background: rgba(255, 255, 255, .18);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 18px
+    }
+
+    .hero h1 {
+      font-size: 44px;
+      letter-spacing: -1.5px;
+      font-weight: 800;
+      margin-bottom: 12px
+    }
+
+    .hero p {
+      font-size: 17px;
+      opacity: .92;
+      max-width: 660px;
+      margin: 0 auto
+    }
+
+    .hero .meta {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 32px
+    }
+
+    .hero .meta div {
+      background: rgba(255, 255, 255, .12);
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 14px;
+      padding: 13px 20px;
+      min-width: 130px
+    }
+
+    .hero .meta .k {
+      font-size: 12px;
+      opacity: .8;
+      font-weight: 600
+    }
+
+    .hero .meta .v {
+      font-size: 17px;
+      font-weight: 800;
+      margin-top: 3px
+    }
+
+    /* 페이지 구성 */
+    .stepper {
+      display: flex;
+      align-items: stretch;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 6px 0 26px
+    }
+
+    .stepper .step {
+      flex: 1;
+      min-width: 96px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center
+    }
+
+    .stepper .step .ic {
+      font-size: 22px
+    }
+
+    .stepper .step .nm {
+      font-size: 12.5px;
+      font-weight: 700;
+      margin-top: 4px
+    }
+
+    .stepper .step .rt {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: ui-monospace, monospace
+    }
+
+    .stepper .sep {
+      align-self: center;
+      color: #94a3b8;
+      font-weight: 800;
+      font-size: 16px
+    }
+
+    .stepper .step.gate {
+      border-color: #fca5a5;
+      background: #fef2f2
+    }
+
+    /* User Flow 애니메이션 */
+    .stepper .step {
+      transition: transform .35s cubic-bezier(.34, 1.3, .5, 1), box-shadow .35s, border-color .35s, background .35s;
+      cursor: pointer
+    }
+
+    .stepper .step .ic {
+      transition: transform .35s
+    }
+
+    .stepper .step.done {
+      border-color: #bfdbfe;
+      background: #f8fbff
+    }
+
+    .stepper .step.on {
+      position: relative;
+      z-index: 2;
+      border-color: var(--blue);
+      background: #eff6ff;
+      box-shadow: 0 9px 24px -9px rgba(37, 99, 235, .6);
+      transform: translateY(-4px) scale(1.05)
+    }
+
+    .stepper .step.on .ic {
+      transform: scale(1.2)
+    }
+
+    .stepper .step.on .nm {
+      color: var(--blue)
+    }
+
+    .stepper .step.gate.on {
+      border-color: var(--red);
+      background: #fef2f2;
+      box-shadow: 0 9px 24px -9px rgba(239, 68, 68, .55)
+    }
+
+    .stepper .step.gate.on .nm {
+      color: var(--red)
+    }
+
+    .stepper .sep {
+      transition: color .3s, transform .3s
+    }
+
+    .stepper .sep.on {
+      color: var(--blue);
+      transform: scale(1.55)
+    }
+
+    .flow-logic {
+      margin: 6px 0 10px;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 15px 18px;
+      color: #e2e8f0;
+      min-height: 90px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      overflow: hidden
+    }
+
+    .flow-logic .fl-ic {
+      font-size: 30px;
+      line-height: 1.1;
+      flex-shrink: 0
+    }
+
+    .flow-logic .fl-body {
+      flex: 1;
+      min-width: 0
+    }
+
+    .flow-logic .fl-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 5px
+    }
+
+    .flow-logic .fl-route {
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      font-weight: 800;
+      color: #7dd3fc;
+      background: rgba(125, 211, 252, .12);
+      border-radius: 6px;
+      padding: 2px 8px
+    }
+
+    .flow-logic .fl-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff
+    }
+
+    .flow-logic .fl-step {
+      margin-left: auto;
+      font-size: 11px;
+      color: #94a3b8;
+      font-family: ui-monospace, monospace
+    }
+
+    .flow-logic .fl-logic {
+      font-size: 13.3px;
+      line-height: 1.65;
+      color: #cbd5e1
+    }
+
+    .flow-logic .fl-tech {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #5eead4;
+      background: rgba(20, 184, 166, .13);
+      border: 1px solid rgba(20, 184, 166, .32);
+      border-radius: 7px;
+      padding: 3px 9px;
+      font-family: ui-monospace, monospace
+    }
+
+    .flow-logic.swap {
+      animation: flSwap .42s cubic-bezier(.22, 1, .36, 1)
+    }
+
+    @keyframes flSwap {
+      from {
+        opacity: .2;
+        transform: translateX(16px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0)
+      }
+    }
+
+    .flow-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 16px
+    }
+
+    .flow-hint b {
+      color: #334155
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      .flow-logic.swap {
+        animation: none
+      }
+
+      .stepper .step {
+        transition: none
+      }
+    }
+
+    .pages {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px
+    }
+
+    .pg {
+      display: grid;
+      grid-template-columns: 118px 1fr;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 13px 15px;
+      align-items: start
+    }
+
+    .pg .route {
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--blue);
+      background: #eff6ff;
+      border-radius: 7px;
+      padding: 4px 7px;
+      text-align: center;
+      white-space: nowrap
+    }
+
+    .pg .pn {
+      font-size: 14px;
+      font-weight: 700
+    }
+
+    .pg .pd {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 2px
+    }
+
+    .api-note {
+      margin-top: 14px;
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #cbd5e1;
+      font-size: 12.5px;
+      line-height: 1.9
+    }
+
+    .api-note b {
+      color: #7dd3fc;
+      font-family: ui-monospace, monospace
+    }
+
+    /* 기술스택 */
+    .layer {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 11px
+    }
+
+    .layer .lh {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap
+    }
+
+    .layer .lh .cat {
+      font-weight: 800;
+      font-size: 15px
+    }
+
+    .layer .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-left: auto
+    }
+
+    .chip {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 12.5px;
+      font-weight: 700
+    }
+
+    .chip small {
+      color: var(--muted);
+      font-weight: 500;
+      margin-left: 4px;
+      font-size: 11px
+    }
+
+    .layer p {
+      font-size: 13.5px;
+      color: #334155
+    }
+
+    /* 파이프라인 */
+    .pipe {
+      display: flex;
+      flex-direction: column;
+      gap: 9px
+    }
+
+    .stage {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--blue);
+      border-radius: 12px;
+      padding: 13px 18px
+    }
+
+    .stage .st {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--blue);
+      letter-spacing: .3px
+    }
+
+    .stage .sd {
+      font-size: 13.8px;
+      margin-top: 3px
+    }
+
+    .stage code,
+    .inline-code {
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      font-family: ui-monospace, monospace
+    }
+
+    .arrow {
+      text-align: center;
+      color: #cbd5e1;
+      font-size: 16px;
+      line-height: .5
+    }
+
+    .flow {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px
+    }
+
+    .flow .node {
+      flex: 1;
+      min-width: 118px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-size: 12.3px;
+      text-align: center
+    }
+
+    .flow .node b {
+      display: block;
+      font-size: 11.5px;
+      color: var(--blue)
+    }
+
+    .flow .sep {
+      align-self: center;
+      color: #94a3b8;
+      font-weight: 800
+    }
+
+    /* 문제해결 */
+    .solve {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 14px
+    }
+
+    .solve .lbl {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--teal);
+      padding: 3px 10px;
+      border-radius: 7px;
+      margin-bottom: 8px
+    }
+
+    .solve .lbl.b {
+      background: var(--blue)
+    }
+
+    .solve .lbl.a {
+      background: var(--amber)
+    }
+
+    .kv {
+      list-style: none;
+      margin-top: 8px
+    }
+
+    .kv li {
+      display: grid;
+      grid-template-columns: 170px 1fr;
+      gap: 12px;
+      padding: 8px 0;
+      border-top: 1px dashed var(--line);
+      font-size: 13.3px
+    }
+
+    .kv li:first-child {
+      border-top: 0
+    }
+
+    .kv .key {
+      font-weight: 700;
+      color: var(--ink)
+    }
+
+    .kv .key small {
+      display: block;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 11px;
+      font-family: ui-monospace, monospace
+    }
+
+    .kv .val {
+      color: #334155
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 13px;
+      margin-top: 6px
+    }
+
+    .res {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 15px;
+      border-top: 3px solid var(--green)
+    }
+
+    .res.warn {
+      border-top-color: var(--amber)
+    }
+
+    .res h4 {
+      font-size: 14px;
+      margin-bottom: 5px
+    }
+
+    .res p {
+      font-size: 12.8px;
+      color: var(--muted)
+    }
+
+    .res .ba {
+      font-size: 12.5px;
+      margin-top: 7px
+    }
+
+    .res .ba .bad {
+      color: var(--red);
+      font-weight: 700
+    }
+
+    .res .ba .good {
+      color: var(--green);
+      font-weight: 700
+    }
+
+    /* 정확도 검증 */
+    .acc-stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 14px 0
+    }
+
+    .acc-stats .s {
+      flex: 1;
+      min-width: 150px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px
+    }
+
+    .acc-stats .s .n {
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: -.6px;
+      color: var(--blue)
+    }
+
+    .acc-stats .s.teal .n {
+      color: var(--teal)
+    }
+
+    .acc-stats .s .l {
+      font-size: 12.5px;
+      color: #334155;
+      font-weight: 700;
+      margin-top: 3px
+    }
+
+    .acc-stats .s .sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+      font-family: ui-monospace, monospace
+    }
+
+    .acc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 12.8px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden
+    }
+
+    .acc-table th {
+      background: #f1f5f9;
+      text-align: left;
+      padding: 9px 12px;
+      font-weight: 800;
+      font-size: 12px;
+      color: #475569;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .acc-table td {
+      padding: 9px 12px;
+      border-top: 1px solid var(--line);
+      color: #334155;
+      vertical-align: top;
+      line-height: 1.5
+    }
+
+    .acc-table td.drug {
+      font-weight: 700;
+      white-space: nowrap;
+      color: var(--ink)
+    }
+
+    .acc-table td.drug small {
+      display: block;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 11px;
+      margin-top: 1px
+    }
+
+    .acc-table .src {
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap
+    }
+
+    .acc-finding {
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      border-left: 4px solid var(--teal);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      font-size: 13.3px;
+      color: #0f766e
+    }
+
+    .acc-finding b {
+      color: #0d9488
+    }
+
+    .acc-cap {
+      font-size: 11.5px;
+      color: #94a3b8;
+      margin-top: 6px
+    }
+
+    /* 타임라인 */
+    .timeline {
+      position: relative;
+      margin-left: 8px;
+      padding-left: 26px;
+      border-left: 2px solid var(--line)
+    }
+
+    .tl {
+      position: relative;
+      margin-bottom: 20px
+    }
+
+    .tl::before {
+      content: '';
+      position: absolute;
+      left: -34px;
+      top: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px var(--blue)
+    }
+
+    .tl .date {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--blue)
+    }
+
+    .tl h4 {
+      font-size: 15px;
+      margin: 2px 0 4px
+    }
+
+    .tl p {
+      font-size: 13.3px;
+      color: var(--muted)
+    }
+
+    .tl .files code {
+      font-size: 11px;
+      background: #f1f5f9;
+      color: #475569;
+      padding: 2px 7px;
+      border-radius: 6px;
+      margin: 3px 5px 0 0;
+      display: inline-block
+    }
+
+    /* 프롬프트 */
+    .pp {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 13px 16px;
+      margin-bottom: 9px;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 12px
+    }
+
+    .pp .n {
+      width: 25px;
+      height: 25px;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #fff;
+      font-weight: 800;
+      font-size: 12.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .pp .q {
+      font-size: 14px;
+      font-weight: 600
+    }
+
+    .pp .r {
+      font-size: 12.8px;
+      color: var(--muted);
+      margin-top: 3px
+    }
+
+    .pp .r::before {
+      content: '↳ ';
+      color: var(--teal);
+      font-weight: 800
+    }
+
+    /* 프롬프트 단계 요약 */
+    .phase {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--blue);
+      border-radius: 12px;
+      padding: 13px 18px;
+      margin-bottom: 11px
+    }
+
+    .ph-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 4px
+    }
+
+    .ph-no {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--blue);
+      border-radius: 7px;
+      padding: 3px 9px
+    }
+
+    .ph-title {
+      font-weight: 800;
+      font-size: 15px
+    }
+
+    .ph-out {
+      margin-left: auto;
+      font-size: 12.3px;
+      color: #0d9488;
+      font-weight: 700;
+      background: #f0fdfa;
+      border-radius: 7px;
+      padding: 3px 9px
+    }
+
+    .ph-prompts {
+      list-style: none;
+      margin: 6px 0 0;
+      padding: 0
+    }
+
+    .ph-prompts li {
+      font-size: 13.4px;
+      color: #334155;
+      padding: 5px 0 5px 17px;
+      position: relative;
+      border-top: 1px dashed var(--line)
+    }
+
+    .ph-prompts li:first-child {
+      border-top: 0
+    }
+
+    .ph-prompts li::before {
+      content: '•';
+      position: absolute;
+      left: 3px;
+      color: #94a3b8;
+      font-weight: 800
+    }
+
+    /* 토큰 */
+    .token-total {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 20px
+    }
+
+    .token-total .box {
+      flex: 1;
+      min-width: 150px;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      color: #fff;
+      border-radius: 16px;
+      padding: 17px 20px
+    }
+
+    .token-total .box.alt {
+      background: linear-gradient(135deg, #0f766e, #14b8a6)
+    }
+
+    .token-total .box.gray {
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--ink)
+    }
+
+    .token-total .k {
+      font-size: 12.5px;
+      opacity: .85;
+      font-weight: 600
+    }
+
+    .token-total .v {
+      font-size: 29px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-top: 2px
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 185px 1fr 78px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px
+    }
+
+    .bar-track {
+      background: #e2e8f0;
+      border-radius: 999px;
+      height: 15px;
+      overflow: hidden
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #2563eb, #38bdf8)
+    }
+
+    .bar-val {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--muted)
+    }
+
+    .note {
+      font-size: 12.5px;
+      color: var(--muted);
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 14px
+    }
+
+    .note b {
+      color: #b45309
+    }
+
+    /* 코드 */
+    .code {
+      margin: 12px 0;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+      background: #0f172a
+    }
+
+    .code .bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1e293b;
+      padding: 8px 14px
+    }
+
+    .code .bar .file {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      font-weight: 700;
+      font-family: ui-monospace, monospace
+    }
+
+    .code .bar .copy {
+      font-size: 11.5px;
+      background: #334155;
+      color: #e2e8f0;
+      border: 0;
+      border-radius: 7px;
+      padding: 5px 11px;
+      cursor: pointer;
+      font-weight: 700
+    }
+
+    .code .bar .copy:hover {
+      background: #475569
+    }
+
+    .code pre {
+      margin: 0;
+      padding: 15px;
+      overflow-x: auto;
+      font-size: 12.4px;
+      line-height: 1.58;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #e2e8f0
+    }
+
+    .code .desc {
+      background: #0b1220;
+      color: #94a3b8;
+      font-size: 12.3px;
+      padding: 8px 14px;
+      border-top: 1px solid #1e293b
+    }
+
+    .code .k {
+      color: #7dd3fc
+    }
+
+    .code .s {
+      color: #fcd34d
+    }
+
+    .code .c {
+      color: #64748b;
+      font-style: italic
+    }
+
+    footer {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    @media(max-width:760px) {
+
+      .g2,
+      .g3,
+      .result-grid,
+      .pages {
+        grid-template-columns: 1fr
+      }
+
+      .layer .chips {
+        margin-left: 0
+      }
+
+      .kv li {
+        grid-template-columns: 1fr
+      }
+
+      .hero h1 {
+        font-size: 31px
+      }
+
+      .bar-row {
+        grid-template-columns: 108px 1fr 60px
+      }
+
+      nav a {
+        display: none
+      }
+
+      nav a.show-m {
+        display: inline
+      }
+    }
+
+    @media print {
+      nav {
+        display: none
+      }
+
+      body {
+        background: #fff
+      }
+
+      section {
+        padding: 20px 0;
+        break-inside: avoid
+      }
+
+      .hero {
+        padding: 34px 0
+      }
+
+      .code,
+      .card,
+      .stage,
+      .res,
+      .solve,
+      .pg,
+      .acc-table,
+      .acc-finding,
+      .acc-stats .s {
+        break-inside: avoid
+      }
+
+      .flow-logic,
+      .flow-hint {
+        display: none
+      }
+
+      .stepper .step.on,
+      .stepper .step.done {
+        transform: none;
+        box-shadow: none
+      }
+
+      .code pre {
+        white-space: pre-wrap;
+        word-break: break-word
+      }
+
+      * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<nav>
-  <div class="nav-inner">
-    <span class="brand">💊 PilloSuffer</span>
-    <a href="#overview" class="show-m">개요</a>
-    <a href="#stack">기술스택</a>
-    <a href="#pipeline">RAG</a>
-    <a href="#timeline">일정</a>
-    <a href="#prompts">프롬프트</a>
-    <a href="#tokens">토큰</a>
-    <a href="#code">코드</a>
-    <a href="#results">성과</a>
-    <button class="print-btn" onclick="window.print()">🖨 PDF 저장</button>
-  </div>
-</nav>
-
-<!-- ===== 표지 ===== -->
-<header class="hero">
-  <div class="wrap">
-    <span class="pill">개발 보고서 · Development Report</span>
-    <h1>PilloSuffer</h1>
-    <p>약물 × 음식 상호작용을 AI로 분석하는 복약 안전 서비스 — RAG 파이프라인 기반 개발 기록</p>
-    <div class="meta">
-      <div><div class="k">프로젝트</div><div class="v">PilloSuffer v1 · v2</div></div>
-      <div><div class="k">핵심 기술</div><div class="v">RAG + LLM</div></div>
-      <div><div class="k">작성일</div><div class="v">2026.05.31</div></div>
+  <nav>
+    <div class="nav-inner">
+      <span class="brand">💊 PilloSuffer</span>
+      <a href="#overview" class="show-m">개요</a>
+      <a href="#structure">구성</a>
+      <a href="#stack">스택</a>
+      <a href="#pipeline">RAG</a>
+      <a href="#solve">문제해결</a>
+      <a href="#timeline">일정</a>
+      <a href="#prompts">프롬프트</a>
+      <a href="#tokens">토큰</a>
+      <a href="#code">코드</a>
+      <button class="print-btn" onclick="window.print()">🖨 PDF</button>
     </div>
-  </div>
-</header>
+  </nav>
 
-<!-- ===== 1. 개요 ===== -->
-<section id="overview"><div class="wrap">
-  <h2><span class="num">1</span>프로젝트 개요</h2>
-  <p class="sub">복용 중인 약과 음식·영양제의 상호작용 위험을 촬영 한 번으로 확인하는 모바일 웹 서비스</p>
-  <div class="grid g3">
-    <div class="card"><h4>📷 약봉투 인식</h4><p>Google Vision OCR로 약봉투를 인식하고 개인정보(이름·주민번호·병원명)를 자동 마스킹</p></div>
-    <div class="card"><h4>🔬 성분 기반 분석</h4><p>약품명 → 공식 영문 성분으로 변환 후 DrugBank·식약처 데이터와 교차 검색</p></div>
-    <div class="card"><h4>🤖 AI 안전 판정</h4><p>검색된 근거를 바탕으로 Gemini가 safe / caution / danger 3단계 위험도와 근거를 생성</p></div>
-  </div>
-  <h3>두 가지 버전</h3>
-  <div class="grid g2">
-    <div class="card"><h4>v1 — Light</h4><p>밝은 테마(포트 3001). 의약품 정보 패널(ℹ️), 약 필터 등 기능 검증용 메인 버전</p></div>
-    <div class="card"><h4>v2 — Dark</h4><p>다크 대시보드 테마(포트 3002). 동일 기능을 세련된 UI로 재구성</p></div>
-  </div>
-</div></section>
-
-<!-- ===== 2. 기술스택 ===== -->
-<section id="stack"><div class="wrap">
-  <h2><span class="num">2</span>기술 스택</h2>
-  <p class="sub">실제 코드 기준으로 검증된 스택 (LangChain·pgvector·shadcn 등 미사용 항목 제외)</p>
-
-  <div class="stack-row"><div class="stack-cat">Frontend<small>사용자 인터페이스</small></div>
-    <div class="stack-items">
-      <span class="chip"><b>React 18</b><small>UI</small></span>
-      <span class="chip"><b>TypeScript 5</b><small>정적 타입</small></span>
-      <span class="chip"><b>Tailwind CSS 3</b><small>스타일</small></span>
-    </div></div>
-
-  <div class="stack-row"><div class="stack-cat">Backend<small>서버 및 API</small></div>
-    <div class="stack-items">
-      <span class="chip"><b>Next.js 14</b><small>App Router</small></span>
-      <span class="chip"><b>Node.js</b><small>런타임</small></span>
-      <span class="chip"><b>Route Handlers</b><small>REST API</small></span>
-    </div></div>
-
-  <div class="stack-row"><div class="stack-cat">AI / ML<small>인공지능</small></div>
-    <div class="stack-items">
-      <span class="chip"><b>Gemini</b><small>gemini-3.1-flash-lite</small></span>
-      <span class="chip"><b>Google Vision</b><small>OCR</small></span>
-      <span class="chip"><b>직접 구현 RAG</b><small>SQL ILIKE 매칭</small></span>
-    </div></div>
-
-  <div class="stack-row"><div class="stack-cat">Data & DB<small>데이터 저장소</small></div>
-    <div class="stack-items">
-      <span class="chip"><b>Supabase</b><small>BaaS</small></span>
-      <span class="chip"><b>PostgreSQL</b><small>RDB</small></span>
-    </div></div>
-
-  <div class="stack-row"><div class="stack-cat">Auth & Storage<small>인증·저장</small></div>
-    <div class="stack-items">
-      <span class="chip"><b>Supabase Auth</b></span>
-      <span class="chip"><b>Google OAuth</b><small>소셜 로그인</small></span>
-      <span class="chip"><b>localStorage</b><small>내 약 보관함</small></span>
-    </div></div>
-
-  <div class="stack-row"><div class="stack-cat">External APIs<small>외부 데이터</small></div>
-    <div class="stack-items">
-      <span class="chip"><b>식약처 e약은요</b><small>DrbEasyDrugInfoService</small></span>
-      <span class="chip"><b>식약처 제품허가</b><small>DrugPrdtPrmsnInfoService07</small></span>
-      <span class="chip"><b>DrugBank 6.0</b><small>데이터셋(Supabase 적재)</small></span>
-    </div></div>
-  <div class="stack-row"><div class="stack-cat">Infra<small>배포</small></div>
-    <div class="stack-items"><span class="chip"><b>Vercel</b><small>배포 플랫폼</small></span></div></div>
-</div></section>
-
-<!-- ===== 3. RAG 파이프라인 ===== -->
-<section id="pipeline"><div class="wrap">
-  <h2><span class="num">3</span>RAG 파이프라인</h2>
-  <p class="sub">검색(Retrieval) → 증강(Augment) → 생성(Generate) → 후처리(Guardrails)</p>
-  <div class="pipe">
-    <div class="stage"><div class="st">STAGE 0 · 입력 수집</div><div class="sd">약봉투 OCR(<code>Google Vision</code>) + 음식 텍스트/사진 인식(<code>Gemini Vision</code>) → PII 마스킹</div></div>
-    <div class="arrow">▼</div>
-    <div class="stage"><div class="st">STAGE 1 · 검색 (Retrieval) · /api/mfds</div>
-      <div class="sd">정적 매핑에 없는 약은 <b>제품허가 API</b>로 영문 성분 해석 → DrugBank 교차검색 + e약은요 병렬 조회</div>
-      <div class="flow">
-        <div class="node"><b>1a 성분해석</b>약품명→Digoxin</div><div class="sep">+</div>
-        <div class="node"><b>1b 음식키워드</b>바나나→potassium</div><div class="sep">→</div>
-        <div class="node"><b>1c DrugBank</b>교차 검색</div><div class="sep">∥</div>
-        <div class="node"><b>1d e약은요</b>병용금기</div>
+  <header class="hero">
+    <div class="wrap">
+      <span class="pill">개발 보고서 · Development Report</span>
+      <h1>PilloSuffer</h1>
+      <p>약물 × 음식 상호작용을 AI로 분석하는 복약 안전 서비스 — 웹페이지 구성, 기술 스택, 문제 해결 과정 기록</p>
+      <div class="meta">
+        <div>
+          <div class="k">유형</div>
+          <div class="v">모바일 웹앱</div>
+        </div>
+        <div>
+          <div class="k">핵심 기술</div>
+          <div class="v">RAG + LLM + OCR</div>
+        </div>
+        <div>
+          <div class="k">버전</div>
+          <div class="v">v1 · v2</div>
+        </div>
+        <div>
+          <div class="k">작성일</div>
+          <div class="v">2026.05.31</div>
+        </div>
       </div>
     </div>
-    <div class="arrow">▼</div>
-    <div class="stage"><div class="st">STAGE 2 · 증강 (Augmentation)</div><div class="sd">e약은요 <b>★최우선</b> → DrugBank 보조 → 환각방지·의료법 회피 규칙을 프롬프트로 조립</div></div>
-    <div class="arrow">▼</div>
-    <div class="stage"><div class="st">STAGE 3 · 생성 (Generation)</div><div class="sd"><code>Gemini</code>가 약×음식 조합별 <b>verdict + 근거 + 출처</b>를 JSON으로 생성</div></div>
-    <div class="arrow">▼</div>
-    <div class="stage"><div class="st">STAGE 4 · 후처리 (Guardrails)</div><div class="sd">verdict 승급(주의/영향→caution) · 출처 자동보정 · 위험표현 치환 · 종합 verdict 결정</div></div>
-  </div>
-  <div class="note">⚙️ <b>키워드 기반 RAG</b>입니다 (벡터 임베딩·pgvector 미사용). 성분명·음식명을 SQL <code style="background:#1e293b;color:#e2e8f0;padding:1px 5px;border-radius:4px">ILIKE</code>로 매칭합니다.</div>
-</div></section>
+  </header>
 
-<!-- ===== 4. 개발 일정 ===== -->
-<section id="timeline"><div class="wrap">
-  <h2><span class="num">4</span>개발 일정</h2>
-  <p class="sub">기능 단계별 진행 (날짜는 작업 흐름 기준 · 필요 시 수정)</p>
-  <div class="timeline">
-    <div class="tl"><div class="date">Phase 1</div><h4>e약은요 API 통합 · 약 필터</h4>
-      <p>식약처 e약은요(병용금기·주의)를 RAG 컨텍스트로 추가. 결과 화면에 "이번 검색 약만 / 내 약 모두" 필터 도입.</p>
-      <div class="files"><code>lib/easyDrug.ts</code><code>app/result/page.tsx</code></div></div>
-    <div class="tl"><div class="date">Phase 2</div><h4>검색 우선순위 재설계</h4>
-      <p>약 이름 검색 실패 문제 해결 — 한글→영문 성분 매핑(DRUG_KOR_TO_ENG)을 35→185개로 확장, 프롬프트 우선순위 재정렬.</p>
-      <div class="files"><code>lib/mfds.ts</code><code>lib/safety-llm.ts</code></div></div>
-    <div class="tl"><div class="date">Phase 3</div><h4>가짜 매칭 제거 · 환각 방지</h4>
-      <p>미등록 약에 다른 약 데이터를 반환하던 fallback 제거(0건은 정직하게 0건). LLM 환각 방지 규칙 추가.</p>
-      <div class="files"><code>lib/mfds.ts</code><code>lib/safety-llm.ts</code></div></div>
-    <div class="tl"><div class="date">Phase 4</div><h4>동적 성분 해석 (제품허가 API)</h4>
-      <p>하드코딩 한계 극복 — 매핑에 없는 약을 식약처 제품허가 API로 실시간 성분 조회. 미승인 시 자동 회로차단.</p>
-      <div class="files"><code>lib/ingredient.ts</code><code>lib/mfds.ts</code></div></div>
-    <div class="tl"><div class="date">Phase 5</div><h4>약 관리 개편 (촬영일 · 그룹)</h4>
-      <p>촬영 날짜 기록 + 함께 촬영된 약을 묶음으로 관리. 기존 평면 데이터 자동 마이그레이션(하위 호환).</p>
-      <div class="files"><code>lib/storage.ts</code><code>app/my-meds/page.tsx</code></div></div>
-    <div class="tl"><div class="date">Phase 6</div><h4>정보 패널 보강 · UI 복구</h4>
-      <p>ℹ️ 정보 패널이 제품허가 API도 사용하도록 보강(암로디핀·와파린도 표시). 빌드/dev 캐시 충돌 복구.</p>
-      <div class="files"><code>app/api/easy-drug/route.ts</code><code>components/DrugCard.tsx</code></div></div>
-    <div class="tl"><div class="date">Phase 7</div><h4>로그인 게이트</h4>
-      <p>약 인식까지는 비로그인 허용, 검증 결과는 로그인 필수. OAuth 왕복 후 입력 유지하여 결과 복귀.</p>
-      <div class="files"><code>app/food/page.tsx</code><code>app/result/page.tsx</code></div></div>
-  </div>
-</div></section>
+  <!-- 1. 개요 -->
+  <section id="overview">
+    <div class="wrap">
+      <h2><span class="num">1</span>프로젝트 개요</h2>
+      <p class="sub">복용 중인 약과 음식·영양제의 상호작용 위험을 촬영 한 번으로 확인하는 모바일 웹 서비스</p>
+      <p class="lead">사용자가 약봉투를 촬영하면 OCR로 약품을 인식하고, 함께 먹는 음식·영양제를 입력하면 공신력 있는 의약품 데이터(식약처·DrugBank)를 근거로 AI가 <b>안전 / 주의
+          / 위험</b> 3단계로 판정합니다. 모든 판정은 "데이터에 없으면 추측하지 않는다"는 원칙 위에서 동작합니다.</p>
+      <div class="grid g3">
+        <div class="card">
+          <h4>📷 약봉투 인식</h4>
+          <p>Google Vision OCR로 약을 인식하고 개인정보(이름·주민번호·병원명)를 자동 마스킹</p>
+        </div>
+        <div class="card">
+          <h4>🔬 성분 기반 분석</h4>
+          <p>약품명을 공식 영문 성분으로 변환 후 DrugBank·식약처 데이터와 교차 검색</p>
+        </div>
+        <div class="card">
+          <h4>🤖 AI 안전 판정</h4>
+          <p>검색된 근거로 Gemini가 위험도 3단계와 사유·출처를 생성 (RAG)</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<!-- ===== 5. 프롬프트 ===== -->
-<section id="prompts"><div class="wrap">
-  <h2><span class="num">5</span>사용한 프롬프트</h2>
-  <p class="sub">개발을 이끈 실제 요청과 그 결과 (시간순)</p>
-  <div id="prompt-list"></div>
-</div></section>
+  <!-- 2. 웹페이지 구성 -->
+  <section id="structure">
+    <div class="wrap">
+      <h2><span class="num">2</span>웹페이지 구성</h2>
+      <p class="sub">8개 화면(페이지)과 6개 API로 구성된 단일 페이지 흐름 — Next.js App Router 기반</p>
 
-<!-- ===== 6. 토큰 ===== -->
-<section id="tokens"><div class="wrap">
-  <h2><span class="num">6</span>토큰 사용량</h2>
-  <p class="sub">단계별 토큰 소비 추정 (AI 페어프로그래밍 기준)</p>
-  <div class="token-total">
-    <div class="box"><div class="k">총 토큰 (추정)</div><div class="v" id="tok-total">—</div></div>
-    <div class="box alt"><div class="k">개발 단계</div><div class="v">8</div></div>
-    <div class="box gray"><div class="k">평균 / 단계</div><div class="v" id="tok-avg">—</div></div>
-  </div>
-  <div id="token-bars"></div>
-  <div class="note">⚠️ <b>추정치입니다.</b> 위 값은 작업량 기반 근사치이며, 정확한 수치는 Anthropic/Claude 사용량 대시보드에서 확인 후 이 파일 상단 <code>TOKEN_DATA</code> 배열을 수정하세요.</div>
-</div></section>
+      <h3><span class="dot"></span>사용자 흐름 (User Flow)</h3>
+      <div class="stepper" id="userflow">
+        <div class="step">
+          <div class="ic">🏠</div>
+          <div class="nm">홈</div>
+          <div class="rt">/</div>
+        </div>
+        <div class="sep">›</div>
+        <div class="step">
+          <div class="ic">📷</div>
+          <div class="nm">촬영</div>
+          <div class="rt">/scan</div>
+        </div>
+        <div class="sep">›</div>
+        <div class="step">
+          <div class="ic">✅</div>
+          <div class="nm">약 확인·저장</div>
+          <div class="rt">/drugs</div>
+        </div>
+        <div class="sep">›</div>
+        <div class="step">
+          <div class="ic">🍎</div>
+          <div class="nm">음식 입력</div>
+          <div class="rt">/food</div>
+        </div>
+        <div class="sep">›</div>
+        <div class="step gate">
+          <div class="ic">🔒</div>
+          <div class="nm">로그인 게이트</div>
+          <div class="rt">/login</div>
+        </div>
+        <div class="sep">›</div>
+        <div class="step">
+          <div class="ic">🩺</div>
+          <div class="nm">검증 결과</div>
+          <div class="rt">/result</div>
+        </div>
+      </div>
+      <div class="flow-logic" id="flow-logic"></div>
+      <p class="flow-hint">▶ 자동 재생 — 각 단계로 넘어가며 <b>주요 로직</b>을 보여줍니다. 단계를 <b>클릭</b>하면 해당 로직으로 이동하고, 마우스를 올리면 멈춥니다.</p>
+      <p class="lead">약 인식까지는 <b>비로그인</b>으로 자유롭게 체험하고, 가치 있는 결과물인 <b>검증 결과는 로그인 후</b> 열람하도록 설계했습니다.</p>
 
-<!-- ===== 7. 중요한 코드 ===== -->
-<section id="code"><div class="wrap">
-  <h2><span class="num">7</span>중요한 코드</h2>
-  <p class="sub">프로젝트의 핵심을 이루는 5개 코드 (복사 가능)</p>
+      <h3><span class="dot"></span>화면(페이지) 목록</h3>
+      <div class="pages">
+        <div class="pg">
+          <div class="route">/</div>
+          <div>
+            <div class="pn">홈 / 대시보드</div>
+            <div class="pd">진입점. 내 약 요약과 주요 기능으로 이동</div>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="route">/login</div>
+          <div>
+            <div class="pn">로그인</div>
+            <div class="pd">Google OAuth 소셜 로그인 (next 복귀 지원)</div>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="route">/scan</div>
+          <div>
+            <div class="pn">약봉투 촬영</div>
+            <div class="pd">이미지 업로드 → Vision OCR → 약품명 파싱</div>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="route">/drugs</div>
+          <div>
+            <div class="pn">인식 약품 확인</div>
+            <div class="pd">인식 결과 수정·추가 후 그룹으로 저장</div>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="route">/food</div>
+          <div>
+            <div class="pn">음식·영양제 입력</div>
+            <div class="pd">텍스트 자동완성 또는 사진 인식으로 추가</div>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="route">/result</div>
+          <div>
+            <div class="pn">검증 결과 🔒</div>
+            <div class="pd">RAG 분석 결과(위험도·근거·출처). 로그인 필요</div>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="route">/my-meds</div>
+          <div>
+            <div class="pn">내 약 관리</div>
+            <div class="pd">촬영일별 묶음 관리, ℹ️ 약 정보 패널</div>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="route">/profile</div>
+          <div>
+            <div class="pn">프로필</div>
+            <div class="pd">사용자 정보·저장 약 개수</div>
+          </div>
+        </div>
+      </div>
+      <div class="api-note">
+        <b>서버 API (Route Handlers)</b> &nbsp;—&nbsp;
+        <b>/api/ocr</b> 약봉투 OCR · <b>/api/food-recognize</b> 음식 사진 인식 · <b>/api/food-search</b> 식품 검색 ·
+        <b>/api/mfds</b> 상호작용 검색(DrugBank+식약처) · <b>/api/safety-check</b> AI 안전 판정 ·
+        <b>/api/easy-drug</b> 약 정보 패널 · <b>/auth/callback</b> OAuth 콜백
+      </div>
+    </div>
+  </section>
 
-  <h3>① 동적 성분 해석 — 하드코딩 없이 임의의 약 → 공식 영문 성분</h3>
-  <div class="code" data-file="lib/ingredient.ts" data-desc="식약처 제품허가 API로 약품명→영문 성분 조회. 미발견·미승인 시 null(가짜 데이터 없음).">
-<script type="text/plain">const PRMSN_URL =
+  <!-- 3. 기술 스택 -->
+  <section id="stack">
+    <div class="wrap">
+      <h2><span class="num">3</span>기술 스택</h2>
+      <p class="sub">각 계층의 역할과 선택 이유 (실제 코드 기준 — LangChain·pgvector·shadcn 등 미사용)</p>
+
+      <div class="layer">
+        <div class="lh"><span class="cat">🖥 Frontend</span>
+          <div class="chips"><span class="chip">React 18</span><span class="chip">TypeScript 5</span><span
+              class="chip">Tailwind CSS 3</span></div>
+        </div>
+        <p>React 함수형 컴포넌트로 화면을 구성하고, TypeScript로 약품·결과 데이터 타입을 엄격히 관리합니다. Tailwind CSS로 v1(라이트)·v2(다크) 두 테마를 빠르게 구현했습니다.
+        </p>
+      </div>
+
+      <div class="layer">
+        <div class="lh"><span class="cat">⚙️ Backend</span>
+          <div class="chips"><span class="chip">Next.js 14<small>App Router</small></span><span
+              class="chip">Node.js</span><span class="chip">REST API</span></div>
+        </div>
+        <p>Next.js App Router의 <span class="inline-code">Route Handlers</span>로 서버리스 API를 구성해, 외부 API
+          키(식약처·Gemini·Vision)를 <b>서버에서만</b> 다뤄 노출을 막았습니다. 프론트·백엔드를 하나의 코드베이스로 운영합니다.</p>
+      </div>
+
+      <div class="layer">
+        <div class="lh"><span class="cat">🤖 AI / ML</span>
+          <div class="chips"><span class="chip">Gemini<small>flash-lite</small></span><span class="chip">Google
+              Vision<small>OCR</small></span><span class="chip">직접 구현 RAG</span></div>
+        </div>
+        <p>Gemini로 ①음식 사진 인식(멀티모달)과 ②안전성 판정(텍스트)을 수행하고, Vision으로 약봉투 OCR을 처리합니다. RAG는 프레임워크 없이 직접 구현했습니다(키워드 검색 → 컨텍스트 →
+          LLM).</p>
+      </div>
+
+      <div class="layer">
+        <div class="lh"><span class="cat">🗄 Data & DB</span>
+          <div class="chips"><span class="chip">Supabase</span><span class="chip">PostgreSQL</span></div>
+        </div>
+        <p>Supabase(PostgreSQL)에 DrugBank 상호작용·가공식품·영양제 데이터를 적재해 빠르게 검색합니다. 별도 서버 구축 없이 DB·인증을 한 번에 사용합니다.</p>
+      </div>
+
+      <div class="layer">
+        <div class="lh"><span class="cat">🔐 Auth & Storage</span>
+          <div class="chips"><span class="chip">Supabase Auth</span><span class="chip">Google OAuth</span><span
+              class="chip">localStorage</span></div>
+        </div>
+        <p>로그인은 Supabase Auth + Google OAuth로 위임(비밀번호 미보관). 복약 데이터는 서버가 아닌 <b>사용자 기기(localStorage)</b>에 저장해 프라이버시를
+          우선했습니다.</p>
+      </div>
+
+      <div class="layer">
+        <div class="lh"><span class="cat">🌐 External APIs</span>
+          <div class="chips"><span class="chip">식약처 e약은요</span><span class="chip">식약처 제품허가</span><span
+              class="chip">DrugBank 6.0</span></div>
+        </div>
+        <p>식약처 공공 API 2종(개요정보·제품허가)과 DrugBank 6.0 데이터셋을 근거 자료로 사용합니다. 약품명→공식 성분 변환과 병용금기 정보를 여기서 확보합니다.</p>
+      </div>
+
+      <div class="layer">
+        <div class="lh"><span class="cat">🚀 Infra</span>
+          <div class="chips"><span class="chip">Vercel</span></div>
+        </div>
+        <p>Next.js에 최적화된 Vercel로 배포해 서버리스 함수와 정적 자산을 자동 운영합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. RAG 파이프라인 -->
+  <section id="pipeline">
+    <div class="wrap">
+      <h2><span class="num">4</span>RAG 파이프라인</h2>
+      <p class="sub">검색(Retrieval) → 증강(Augment) → 생성(Generate) → 후처리(Guardrails)</p>
+      <div class="pipe">
+        <div class="stage">
+          <div class="st">STAGE 0 · 입력 수집</div>
+          <div class="sd">약봉투 OCR(<code>Google Vision</code>) + 음식 텍스트/사진(<code>Gemini Vision</code>) → PII 마스킹</div>
+        </div>
+        <div class="arrow">▼</div>
+        <div class="stage">
+          <div class="st">STAGE 1 · 검색 (Retrieval) · /api/mfds</div>
+          <div class="sd">정적 매핑에 없는 약은 <b>제품허가 API</b>로 영문 성분 해석 → DrugBank 교차검색 + e약은요 병렬 조회</div>
+          <div class="flow">
+            <div class="node"><b>1a 성분해석</b>약품명→Digoxin</div>
+            <div class="sep">+</div>
+            <div class="node"><b>1b 음식키워드</b>바나나→potassium</div>
+            <div class="sep">→</div>
+            <div class="node"><b>1c DrugBank</b>교차 검색</div>
+            <div class="sep">∥</div>
+            <div class="node"><b>1d e약은요</b>병용금기</div>
+          </div>
+        </div>
+        <div class="arrow">▼</div>
+        <div class="stage">
+          <div class="st">STAGE 2 · 증강 (Augmentation)</div>
+          <div class="sd">e약은요 <b>★최우선</b> → DrugBank 보조 → 환각방지·의료법 회피 규칙을 프롬프트로 조립</div>
+        </div>
+        <div class="arrow">▼</div>
+        <div class="stage">
+          <div class="st">STAGE 3 · 생성 (Generation)</div>
+          <div class="sd"><code>Gemini</code>가 약×음식 조합별 <b>verdict + 근거 + 출처</b>를 JSON으로 생성</div>
+        </div>
+        <div class="arrow">▼</div>
+        <div class="stage">
+          <div class="st">STAGE 4 · 후처리 (Guardrails)</div>
+          <div class="sd">verdict 승급(주의/영향→caution) · 출처 자동보정 · 위험표현 치환 · 종합 verdict 결정</div>
+        </div>
+      </div>
+      <div class="note">⚙️ <b>키워드 기반 RAG</b>입니다 (벡터 임베딩·pgvector 미사용). 성분명·음식명을 SQL <span
+          class="inline-code">ILIKE</span>로 매칭합니다.</div>
+    </div>
+  </section>
+
+  <!-- 5. 문제 해결 방법 -->
+  <section id="solve">
+    <div class="wrap">
+      <h2><span class="num">5</span>문제 해결 방법</h2>
+      <p class="sub">데이터 확보 · 사용자 정보 저장 · 활용 기술 중심</p>
+
+      <div class="solve">
+        <span class="lbl b">A. 데이터 확보 방식</span>
+        <p class="lead">신뢰할 수 있는 의약품·식품 데이터를 공신력 있는 출처에서 확보하고, 약품명→성분 변환 문제를 단계적으로 해결했습니다.</p>
+        <ul class="kv">
+          <li>
+            <div class="key">DrugBank 6.0<small>Supabase 적재 · 2,512건</small></div>
+            <div class="val">공개 상호작용 데이터셋을 PostgreSQL 테이블에 적재해 자체 DB로 빠르게 조회 (영문 성분·상호작용 설명).</div>
+          </li>
+          <li>
+            <div class="key">식약처 e약은요<small>DrbEasyDrugInfoService</small></div>
+            <div class="val">공공데이터포털 활용신청 후 실시간 호출. 효능·<b>병용금기</b>·주의·부작용(일반인용 쉬운 설명).</div>
+          </li>
+          <li>
+            <div class="key">식약처 제품허가<small>DrugPrdtPrmsnInfoService07</small></div>
+            <div class="val">추가 활용신청. 약품명→<b>공식 영문 성분</b>·분류·제조사. 하드코딩 매핑의 한계를 극복한 핵심.</div>
+          </li>
+          <li>
+            <div class="key">가공식품·영양제<small>Supabase 테이블</small></div>
+            <div class="val">식품·영양제 테이블로 검색 자동완성 제공.</div>
+          </li>
+          <li>
+            <div class="key">이미지 → 텍스트<small>Vision · Gemini</small></div>
+            <div class="val">약봉투는 Google Vision OCR, 음식 사진은 Gemini 멀티모달로 품목명 추출.</div>
+          </li>
+        </ul>
+        <p class="lead" style="margin-top:12px"><b>핵심 해결:</b> 약 이름으로 검색이 안 되던 문제 → 한글→영문 성분 정적 매핑(185개) + <b>매핑에 없으면
+            제품허가 API로 실시간 해석</b>하는 2단계 구조로 해결. LLM 성분 추측은 오답 위험(예: 카데프엘릭서를 "dextromethorphan"으로 오인) 때문에 <b>의도적으로
+            배제</b>하고 공식 데이터만 사용.</p>
+      </div>
+
+      <div class="solve">
+        <span class="lbl">B. 사용자 정보 저장 방법</span>
+        <p class="lead">민감한 복약 정보를 서버에 모으지 않는 <b>프라이버시 우선(local-first)</b> 설계를 택했습니다.</p>
+        <ul class="kv">
+          <li>
+            <div class="key">복약 데이터<small>localStorage: medGroups</small></div>
+            <div class="val">촬영 세션 단위 묶음(촬영 날짜 포함)을 <b>사용자 기기에만</b> 저장. 서버 미보관.</div>
+          </li>
+          <li>
+            <div class="key">하위 호환 미러<small>localStorage: savedMedications</small></div>
+            <div class="val">평면 목록 자동 동기화로 기존 화면과 호환 + 무중단 마이그레이션.</div>
+          </li>
+          <li>
+            <div class="key">분석 임시 세션<small>sessionStorage: scanSession·foodList</small></div>
+            <div class="val">탭 단위 임시 보관. 로그인(OAuth) 왕복 후에도 유지되어 결과로 복귀.</div>
+          </li>
+          <li>
+            <div class="key">프로필·히스토리<small>localStorage</small></div>
+            <div class="val">프로필·최근 분석 기록(최대 10건)을 기기에 저장.</div>
+          </li>
+          <li>
+            <div class="key">로그인 인증<small>Supabase Auth + Google OAuth</small></div>
+            <div class="val">비밀번호를 직접 받지 않고 OAuth에 위임. 세션은 보안 쿠키, 미들웨어가 자동 갱신.</div>
+          </li>
+          <li>
+            <div class="key">개인정보 보호<small>PII 마스킹</small></div>
+            <div class="val">OCR 텍스트의 이름·주민번호·병원명을 <b>LLM 전송 전</b> 제거. 약품명만 분석에 사용.</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="solve">
+        <span class="lbl a">C. 활용 기술</span>
+        <ul class="kv">
+          <li>
+            <div class="key">RAG</div>
+            <div class="val">외부 데이터 검색 → 컨텍스트 증강 → LLM 생성. 프레임워크 없이 직접 구현(키워드 매칭).</div>
+          </li>
+          <li>
+            <div class="key">OCR · 멀티모달</div>
+            <div class="val">Vision OCR(약봉투) + Gemini Vision(음식 사진)으로 이미지를 구조화된 텍스트로.</div>
+          </li>
+          <li>
+            <div class="key">프롬프트 엔지니어링</div>
+            <div class="val">출처 우선순위·환각 방지·의료법 회피 표현을 규칙화해 답변 신뢰성·안전성 확보.</div>
+          </li>
+          <li>
+            <div class="key">회로차단 · 캐싱</div>
+            <div class="val">외부 API 실패 시 자동 비활성(가짜 데이터 차단) + 1주 캐시로 안정성·속도 확보.</div>
+          </li>
+          <li>
+            <div class="key">데이터 마이그레이션</div>
+            <div class="val">평면 저장 → 그룹 저장으로 전환하며 기존 사용자 데이터 무손실 자동 변환.</div>
+          </li>
+        </ul>
+      </div>
+
+      <h3><span class="dot"></span>주요 성과 (Before → After)</h3>
+      <div class="result-grid">
+        <div class="res">
+          <h4>🩺 환각(허위 정보) 제거</h4>
+          <p>미등록 약에 다른 약 데이터를 반환하던 fallback 제거 + 프롬프트 강화.</p>
+          <div class="ba"><span class="bad">전:</span> "칼륨 보충제…"(허위) → <span class="good">후:</span> Digoxin(강심제) 정확</div>
+        </div>
+        <div class="res">
+          <h4>🔁 매핑 확장성 한계 해결</h4>
+          <p>수작업 매핑(오류 포함)을 제품허가 API 동적 해석으로 대체.</p>
+          <div class="ba"><span class="bad">전:</span> 5만+ 약 수동 등록 불가 → <span class="good">후:</span> 임의 약 자동 해석</div>
+        </div>
+        <div class="res">
+          <h4>ℹ️ 정보 패널 커버리지</h4>
+          <p>e약은요 단독으론 노바스크조차 0건 → 제품허가 API 병합.</p>
+          <div class="ba"><span class="bad">전:</span> "정보 없음" → <span class="good">후:</span> 성분·분류·제조사</div>
+        </div>
+        <div class="res warn">
+          <h4>🛠 dev 캐시 손상 복구</h4>
+          <p>dev 가동 중 build로 <span class="inline-code">.next</span> 손상 → 정리·재기동, 이후 <span class="inline-code">tsc</span>
+            검증.</p>
+          <div class="ba"><span class="bad">증상:</span> UI 전체 깨짐 → <span class="good">복구:</span> 정상화</div>
+        </div>
+      </div>
+
+      <h3><span class="dot"></span>정확도 검증 — 약학정보원 기준 평가</h3>
+      <p class="lead">현업 약사가 환자에게 음식–약물 상호작용을 안내할 때 가장 널리 쓰는 <b>약학정보원(KPIC)</b> 데이터를 <b>정답(ground truth)</b>으로 가정하고
+        PilloSuffer의 판정 결과를 대조했습니다. 약학정보원은 자체 구축한 데이터를 사용하며 외부에는 공개되지 않지만, 실제 임상 복약지도에서 사실상 표준 레퍼런스로 통용됩니다.</p>
+
+      <div class="solve">
+        <span class="lbl b">검증 결과</span>
+        <ul class="kv">
+          <li>
+            <div class="key">일치도<small>vs 약학정보원</small></div>
+            <div class="val">약학정보원이 보유한 항목에서는 PilloSuffer의 판정이 일관되게 일치했습니다.</div>
+          </li>
+          <li>
+            <div class="key">초과 커버리지<small>app &gt; KPIC</small></div>
+            <div class="val"><b>약학정보원에는 수록되지 않은 상호작용까지 앱이 제시하는 사례</b>가 확인됐습니다 — 오류가 아니라 보유 정보량의 우위입니다.</div>
+          </li>
+          <li>
+            <div class="key">원인<small>why</small></div>
+            <div class="val">약학정보원은 비공개 내부 DB에 의존하는 반면, PilloSuffer는 DrugBank 6.0 정제 데이터와 대규모 문헌 텍스트마이닝 데이터를 함께 근거로
+              사용합니다.</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="acc-finding">📊 <b>현업에서 실제로 사용하는 레퍼런스보다 PilloSuffer가 보유한 근거 데이터의 양이 훨씬 많았습니다.</b> 약학정보원에서 "정보 없음"으로
+        끝나는 약·음식 조합에 대해서도, PilloSuffer는 공신력 있는 근거를 제시할 수 있었습니다.</div>
+
+      <h3><span class="dot"></span>근거 데이터 규모 — CSV</h3>
+      <div class="acc-stats">
+        <div class="s">
+          <div class="n">1,423</div>
+          <div class="l">DrugBank 정제 약물</div>
+          <div class="sub">drug_food_interactions.csv</div>
+        </div>
+        <div class="s">
+          <div class="n">2,512</div>
+          <div class="l">정제 상호작용 항목</div>
+          <div class="sub">source: DrugBank 6.0</div>
+        </div>
+        <div class="s teal">
+          <div class="n">593,404</div>
+          <div class="l">문헌 텍스트마이닝 근거</div>
+          <div class="sub">tm_interactions_final.csv</div>
+        </div>
+        <div class="s teal">
+          <div class="n">165,475 / 46,816</div>
+          <div class="l">커버 약물 / 음식 (문헌)</div>
+          <div class="sub">고유 drug / food 수</div>
+        </div>
+      </div>
+      <p class="lead">아래는 정제 상호작용 데이터(<span class="inline-code">drug_food_interactions.csv</span>)의 실제 샘플입니다 — 약사 복약지도에서
+        자주 다루는 대표 상호작용이 그대로 포함되어 있습니다.</p>
+
+      <table class="acc-table">
+        <thead>
+          <tr>
+            <th>약물</th>
+            <th>음식·영양제 상호작용</th>
+            <th>출처</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="drug">Warfarin<small>와파린 · 항응고제</small></td>
+            <td>비타민 K 풍부 식품(잎채소) 회피 — 항응고 효과를 떨어뜨릴 수 있음</td>
+            <td class="src">DrugBank 6.0</td>
+          </tr>
+          <tr>
+            <td class="drug">Amlodipine<small>암로디핀 · 노바스크</small></td>
+            <td>자몽 제품 회피 / 천연 감초 회피</td>
+            <td class="src">DrugBank 6.0</td>
+          </tr>
+          <tr>
+            <td class="drug">Digoxin<small>디곡신 · 강심제</small></td>
+            <td>칼륨 함유 제품 주의 — 병용 시 부정맥을 유발할 수 있음</td>
+            <td class="src">DrugBank 6.0</td>
+          </tr>
+          <tr>
+            <td class="drug">Levothyroxine<small>레보티록신 · 갑상선</small></td>
+            <td>칼슘 보충제·칼슘 풍부 식품 회피 — 약물 흡수 저해</td>
+            <td class="src">DrugBank 6.0</td>
+          </tr>
+          <tr>
+            <td class="drug">Atorvastatin<small>아토르바스타틴 · 고지혈</small></td>
+            <td>자몽 제품 회피 — 관련 부작용 위험 증가</td>
+            <td class="src">DrugBank 6.0</td>
+          </tr>
+          <tr>
+            <td class="drug">Metformin<small>메트포르민 · 당뇨</small></td>
+            <td>음주 회피 / 음식과 함께 복용(위장 자극 완화)</td>
+            <td class="src">DrugBank 6.0</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="acc-cap">※ 전체 <b>2,512</b>건 중 6건 발췌. 표의 약물은 본 보고서에서 다룬 사례(디곡신·암로디핀·와파린)와 직접 연결됩니다.</p>
+
+      <div class="note">⚠️ <b>현업 적용에는 추가적인 임상 검증이 필요합니다.</b> 다만 본 검증을 통해, <b>실제로 사용하기에 정보의 양·정확도 모두 부족한 점이 없음</b>을
+        확인했습니다 — 약학정보원이 다루는 범위를 포함하면서, 그 이상의 조합까지 근거를 제시합니다.</div>
+    </div>
+  </section>
+
+  <!-- 6. 개발 일정 -->
+  <section id="timeline">
+    <div class="wrap">
+      <h2><span class="num">6</span>개발 일정</h2>
+      <p class="sub">기능 단계별 진행 (날짜 라벨은 필요 시 실제 일자로 수정)</p>
+      <div class="timeline">
+        <div class="tl">
+          <div class="date">Phase 1</div>
+          <h4>e약은요 API 통합 · 약 필터</h4>
+          <p>식약처 e약은요를 RAG 컨텍스트로 추가, 결과 화면 "이번 검색 약만 / 내 약 모두" 필터.</p>
+          <div class="files"><code>lib/easyDrug.ts</code><code>app/result/page.tsx</code></div>
+        </div>
+        <div class="tl">
+          <div class="date">Phase 2</div>
+          <h4>검색 우선순위 재설계</h4>
+          <p>약 이름 검색 실패 해결 — 한글→영문 매핑 35→185개 확장, 프롬프트 우선순위 재정렬.</p>
+          <div class="files"><code>lib/mfds.ts</code><code>lib/safety-llm.ts</code></div>
+        </div>
+        <div class="tl">
+          <div class="date">Phase 3</div>
+          <h4>가짜 매칭 제거 · 환각 방지</h4>
+          <p>미등록 약에 타 약 데이터 반환하던 fallback 제거(0건은 0건). 환각 방지 규칙 추가.</p>
+          <div class="files"><code>lib/mfds.ts</code><code>lib/safety-llm.ts</code></div>
+        </div>
+        <div class="tl">
+          <div class="date">Phase 4</div>
+          <h4>동적 성분 해석 (제품허가 API)</h4>
+          <p>매핑에 없는 약을 제품허가 API로 실시간 성분 조회. 미승인 시 자동 회로차단.</p>
+          <div class="files"><code>lib/ingredient.ts</code><code>lib/mfds.ts</code></div>
+        </div>
+        <div class="tl">
+          <div class="date">Phase 5</div>
+          <h4>약 관리 개편 (촬영일 · 그룹)</h4>
+          <p>촬영 날짜 기록 + 함께 촬영된 약 묶음 관리. 기존 데이터 자동 마이그레이션.</p>
+          <div class="files"><code>lib/storage.ts</code><code>app/my-meds/page.tsx</code></div>
+        </div>
+        <div class="tl">
+          <div class="date">Phase 6</div>
+          <h4>정보 패널 보강 · UI 복구</h4>
+          <p>ℹ️ 패널에 제품허가 API 병합(암로디핀·와파린 표시). dev 캐시 충돌 복구.</p>
+          <div class="files"><code>app/api/easy-drug/route.ts</code><code>components/DrugCard.tsx</code></div>
+        </div>
+        <div class="tl">
+          <div class="date">Phase 7</div>
+          <h4>로그인 게이트</h4>
+          <p>약 인식까지 비로그인 허용, 검증 결과는 로그인 필수. OAuth 후 입력 유지·복귀.</p>
+          <div class="files"><code>app/food/page.tsx</code><code>app/result/page.tsx</code></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. 프롬프트 -->
+  <section id="prompts">
+    <div class="wrap">
+      <h2><span class="num">7</span>사용한 프롬프트 — 개발 전체 요약</h2>
+      <p class="sub">초기 구축부터 현재까지, 개발을 이끈 주요 요청을 6단계로 요약</p>
+      <div id="prompt-list"></div>
+    </div>
+  </section>
+
+  <!-- 8. 토큰 -->
+  <section id="tokens">
+    <div class="wrap">
+      <h2><span class="num">8</span>토큰 사용량</h2>
+      <p class="sub">단계별 토큰 소비 추정</p>
+      <div class="token-total">
+        <div class="box">
+          <div class="k">총 토큰 (추정)</div>
+          <div class="v" id="tok-total">—</div>
+        </div>
+        <div class="box alt">
+          <div class="k">개발 단계</div>
+          <div class="v">8</div>
+        </div>
+        <div class="box gray">
+          <div class="k">평균 / 단계</div>
+          <div class="v" id="tok-avg">—</div>
+        </div>
+      </div>
+      <div id="token-bars"></div>
+      <div class="note">⚠️ <b>추정치입니다.</b> 정확한 수치는 Claude 사용량 대시보드에서 확인 후 파일 하단 <span
+          class="inline-code">TOKEN_DATA</span> 배열을 수정하세요.</div>
+    </div>
+  </section>
+
+  <!-- 9. 코드 -->
+  <section id="code">
+    <div class="wrap">
+      <h2><span class="num">9</span>중요한 코드</h2>
+      <p class="sub">프로젝트의 핵심 5개 (복사 가능)</p>
+
+      <h3><span class="dot"></span>① 동적 성분 해석 — 임의의 약 → 공식 영문 성분</h3>
+      <div class="code" data-file="lib/ingredient.ts" data-desc="제품허가 API로 약품명→영문 성분 조회. 미발견·미승인 시 null(가짜 데이터 없음).">
+        <script type="text/plain">const PRMSN_URL =
   'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService07/getDrugPrdtPrmsnInq07'
 
 export async function resolveIngredient(drugName: string): Promise<ResolvedIngredient | null> {
@@ -363,11 +1923,11 @@ export async function resolveIngredient(drugName: string): Promise<ResolvedIngre
   cache.set(drugName, null)
   return null   // 못 찾으면 정직하게 null — 절대 추측하지 않음
 }</script>
-  </div>
+      </div>
 
-  <h3>② RAG 검색 키워드 확장 — 정적 매핑 → API 폴백</h3>
-  <div class="code" data-file="lib/mfds.ts" data-desc="매핑에 없는 약만 제품허가 API를 호출해 영문 성분을 DrugBank 검색에 투입.">
-<script type="text/plain">const keywordsByDrug = new Map<string, string[]>()
+      <h3><span class="dot"></span>② RAG 검색 키워드 확장 — 정적 매핑 → API 폴백</h3>
+      <div class="code" data-file="lib/mfds.ts" data-desc="매핑에 없는 약만 제품허가 API를 호출해 영문 성분을 DrugBank 검색에 투입.">
+        <script type="text/plain">const keywordsByDrug = new Map<string, string[]>()
 await Promise.all(drugs.map(async (drug) => {
   const kws = new Set(expandDrugKeywords(drug.name))
   const staticHit = Object.keys(DRUG_KOR_TO_ENG).some(
@@ -382,11 +1942,11 @@ await Promise.all(drugs.map(async (drug) => {
   }
   keywordsByDrug.set(drug.name, [...kws])
 }))</script>
-  </div>
+      </div>
 
-  <h3>③ 환각 방지 프롬프트 — 데이터 없으면 추측 금지</h3>
-  <div class="code" data-file="lib/safety-llm.ts" data-desc="Gemini가 근거 없는 약물 분류를 지어내지 못하도록 강제하는 규칙.">
-<script type="text/plain">🚫 환각 방지 — 가장 중요한 규칙:
+      <h3><span class="dot"></span>③ 환각 방지 프롬프트 — 데이터 없으면 추측 금지</h3>
+      <div class="code" data-file="lib/safety-llm.ts" data-desc="Gemini가 근거 없는 약물 분류를 지어내지 못하도록 강제하는 규칙.">
+        <script type="text/plain">🚫 환각 방지 — 가장 중요한 규칙:
 - [식약처 e약은요]·[DrugBank] 섹션에 실제 데이터가 없으면
   그 약품의 성분·분류·약리작용을 추측하거나 지어내지 마세요.
 - "~계열 약물입니다" 등 데이터 없는 분류는 절대 금지.
@@ -394,11 +1954,11 @@ await Promise.all(drugs.map(async (drug) => {
   "데이터베이스에서 해당 약품의 상호작용 정보를 찾지 못했습니다.
    정확한 확인을 위해 약사·의사 상담을 권합니다."
 - 잘 모르는 약에 다른 약의 정보를 가져다 쓰지 마세요.</script>
-  </div>
+      </div>
 
-  <h3>④ 촬영 날짜 그룹 저장 — 함께 촬영된 약 묶음 관리</h3>
-  <div class="code" data-file="lib/storage.ts" data-desc="한 번의 촬영을 그룹으로 저장. 평면 목록도 미러링해 기존 화면과 하위 호환.">
-<script type="text/plain">export interface MedGroup {
+      <h3><span class="dot"></span>④ 사용자 정보 저장 — 촬영 날짜 그룹 (local-first)</h3>
+      <div class="code" data-file="lib/storage.ts" data-desc="한 번의 촬영을 그룹으로 기기에 저장. 평면 목록도 미러링해 하위 호환.">
+        <script type="text/plain">export interface MedGroup {
   id: string
   scannedAt: string            // 촬영(기록)한 날짜·시각
   source: 'scan' | 'manual'
@@ -416,14 +1976,15 @@ export function addMedGroup(
     source,
     drugs,
   }
-  persistMedGroups([group, ...getMedGroups()])   // 최신이 위로 + 평면 미러 동기화
+  persistMedGroups([group, ...getMedGroups()])   // 기기 저장 + 평면 미러 동기화
   return group
 }</script>
-  </div>
+      </div>
 
-  <h3>⑤ 로그인 게이트 — 검증 결과는 로그인 필수</h3>
-  <div class="code" data-file="app/food/page.tsx · app/result/page.tsx" data-desc="약 인식까지는 비로그인 허용, 결과 진입 시 로그인으로. 입력은 미리 저장해 OAuth 후 복귀.">
-<script type="text/plain">// food/page.tsx — 입력 저장 후 비로그인이면 로그인으로 유도
+      <h3><span class="dot"></span>⑤ 로그인 게이트 — 검증 결과는 로그인 필수</h3>
+      <div class="code" data-file="app/food/page.tsx · app/result/page.tsx"
+        data-desc="약 인식까지는 비로그인 허용, 결과 진입 시 로그인으로. 입력은 미리 저장해 OAuth 후 복귀.">
+        <script type="text/plain">// food/page.tsx — 입력 저장 후 비로그인이면 로그인으로 유도
 function proceed() {
   if (!foods.length) return
   sessionStorage.setItem('foodList', JSON.stringify(foods))
@@ -440,113 +2001,128 @@ useEffect(() => {
   if (!user) { router.replace('/login?next=/result'); return }
   fetchResult()
 }, [authLoading, user, fetchResult, router])</script>
-  </div>
-</div></section>
+      </div>
+    </div>
+  </section>
 
-<!-- ===== 8. 성과 ===== -->
-<section id="results"><div class="wrap">
-  <h2><span class="num">8</span>트러블슈팅 & 성과</h2>
-  <p class="sub">개발 중 해결한 핵심 문제</p>
-  <div class="result-grid">
-    <div class="res"><h4>🩺 환각(잘못된 약 정보) 제거</h4><p>미등록 약에 다른 약의 음식 키워드 매칭을 반환하던 fallback 제거 + 프롬프트 강화.</p>
-      <div class="ba"><span class="bad">전:</span> "카데프엘릭서는 칼륨 보충제…"(허위) → <span class="good">후:</span> Digoxin(강심제) 정확 매칭</div></div>
-    <div class="res"><h4>🔁 매핑 확장성 한계 해결</h4><p>수작업 매핑(틀린 항목도 존재: 놀텍=ilaprazole)을 제품허가 API 동적 해석으로 대체.</p>
-      <div class="ba"><span class="bad">전:</span> 5만+ 약 수동 등록 불가 → <span class="good">후:</span> 임의 약 자동 성분 해석</div></div>
-    <div class="res"><h4>ℹ️ 정보 패널 커버리지</h4><p>e약은요 단독으론 암로디핀·와파린·노바스크조차 0건 → 제품허가 API 병합.</p>
-      <div class="ba"><span class="bad">전:</span> "정보 없음" → <span class="good">후:</span> 성분·분류·제조사 표시</div></div>
-    <div class="res warn"><h4>🛠 dev 캐시 손상 복구</h4><p>dev 서버 가동 중 build 실행으로 <code>.next</code> 손상 → 정리 후 재기동. 이후 <code>tsc --noEmit</code>로 검증.</p>
-      <div class="ba"><span class="bad">증상:</span> UI 전체 깨짐 → <span class="good">복구:</span> 전 페이지 정상</div></div>
-  </div>
-</div></section>
+  <footer>PilloSuffer 개발 보고서 · 2026.05.31 · Next.js · Supabase · Gemini · 식약처/DrugBank 데이터</footer>
 
-<footer>
-  PilloSuffer 개발 보고서 · 2026.05.31 · Next.js · Supabase · Gemini · 식약처/DrugBank 데이터
-</footer>
-
-<script>
-/* ===== 편집 가능한 데이터 ===== */
-// 토큰 사용량(추정) — 실제 값으로 수정하세요
-const TOKEN_DATA = [
-  { phase: 'e약은요 통합·약 필터',      tokens: 28000 },
-  { phase: '검색 우선순위·매핑 확장',   tokens: 32000 },
-  { phase: '환각 제거·성분 검증',       tokens: 26000 },
-  { phase: '동적 성분 해석(제품허가)',  tokens: 41000 },
-  { phase: '약 관리(촬영일·그룹)',      tokens: 30000 },
-  { phase: '정보 패널·UI 복구',         tokens: 22000 },
-  { phase: '로그인 게이트',             tokens: 18000 },
-  { phase: '문서·보고서',               tokens: 15000 },
-];
-
-// 실제 사용한 프롬프트 (시간순) — q: 요청, r: 결과
-const PROMPTS = [
-  { q: '분석 결과 화면에 "이번 검색 약만 / 내 약 모두" 보기 버튼 만들어줘', r: '결과 페이지 약 필터 토글 구현' },
-  { q: '약 성분으로는 검색되는데 약 이름으론 못 찾아 — 검색 우선순위 바꿔봐', r: '한글→영문 매핑 35→185개 확장, 프롬프트 우선순위 재정렬' },
-  { q: '아직도 이런 소리를 하는데 (잘못된 12건 매칭 + 환각)', r: '가짜 음식 키워드 fallback 제거, 환각 방지 규칙 추가' },
-  { q: '다시 해봤더니 성분을 틀렸다던데, 인터넷 검색을 해봐', r: '카데프엘릭서 = 디곡신(강심제) 확인 → 매핑 교정' },
-  { q: '문제는 이런 게 한두 개가 아닐 수도 있다는 거야', r: '하드코딩 한계 인식 → 동적 성분 해석 방향 결정' },
-  { q: '약 관리할 때 촬영 날짜 기록하고, 함께 촬영된 약을 관리하게 해줘', r: 'MedGroup(촬영일·묶음) 저장 구조 + 그룹 UI' },
-  { q: '해봐 (동적 성분 해석 구현)', r: '제품허가 API(07) 연동 + 회로차단, 실데이터 검증' },
-  { q: '데이터·API 뭐 쓰는지, 기술스택 알려줘', r: '데이터 5종·API 5종·스택 정리' },
-  { q: 'RAG 파이프라인 자세히 / Langchain도 써?', r: '4-Stage 파이프라인 문서화, LangChain 미사용 확인' },
-  { q: '이 기술스택 이미지에서 추가할 거·뺄 거 알려줘 / 맞아?', r: '미사용 6종 제거·표현 교정 검수' },
-  { q: '여기서도 그냥 못 찾는다고 나오는데 왜 이래 (암로디핀·와파린)', r: 'ℹ️ 패널에 제품허가 API 병합 → 성분·분류·제조사 표시' },
-  { q: 'v2에도 적용된 거야? UI 적용 안 된 것 같은데', r: 'v2 DrugCard에 정보 패널 신규 추가 + 라우트 생성' },
-  { q: '야 UI 다 깨졌어', r: 'dev 중 build로 .next 손상 진단 → 정리·재기동 복구' },
-  { q: '비로그인은 약 인식까지만, 검증 결과는 로그인하게 만들어', r: 'food/result 로그인 게이트(next 복귀) 적용' },
-  { q: '이 보고서 HTML/CSS/JS로 만들어줘', r: '단일 파일 개발 보고서 생성 (이 문서)' },
-];
-
-/* ===== 렌더링 ===== */
-const fmt = n => n.toLocaleString('ko-KR');
-
-// 프롬프트
-document.getElementById('prompt-list').innerHTML = PROMPTS.map((p,i) =>
-  `<div class="pp"><div class="n">${i+1}</div><div><div class="q">"${p.q}"</div><div class="r">${p.r}</div></div></div>`
-).join('');
-
-// 토큰
-const total = TOKEN_DATA.reduce((s,d)=>s+d.tokens,0);
-const max = Math.max(...TOKEN_DATA.map(d=>d.tokens));
-document.getElementById('tok-total').textContent = fmt(total);
-document.getElementById('tok-avg').textContent = fmt(Math.round(total/TOKEN_DATA.length));
-document.getElementById('token-bars').innerHTML = TOKEN_DATA.map(d =>
-  `<div class="bar-row"><span>${d.phase}</span>
-   <div class="bar-track"><div class="bar-fill" style="width:${(d.tokens/max*100).toFixed(1)}%"></div></div>
-   <span class="bar-val">${fmt(d.tokens)}</span></div>`
-).join('');
-
-// 코드 하이라이트 + 복사
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function highlight(code){
-  const re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|(`(?:\\.|[^`\\])*`|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|\b(const|let|var|function|return|if|else|for|await|async|import|export|from|new|interface|type|class|extends|of|in|null|true|false|void|Promise|Map|Set|Object)\b/g;
-  return esc(code).replace(re, (m,c,s,k) =>
-    c ? `<span class="c">${c}</span>` : s ? `<span class="s">${s}</span>` : k ? `<span class="k">${k}</span>` : m
-  );
-}
-document.querySelectorAll('.code').forEach(block => {
-  const src = block.querySelector('script');
-  const raw = src.textContent.replace(/^\n/,'').replace(/\s+$/,'');
-  const file = block.dataset.file || 'code';
-  const desc = block.dataset.desc || '';
-  block.innerHTML =
-    `<div class="bar"><span class="file">${file}</span><button class="copy">복사</button></div>`+
-    `<pre>${highlight(raw)}</pre>`+
-    (desc ? `<div class="desc">💡 ${desc}</div>` : '');
-  block.querySelector('.copy').addEventListener('click', e => {
-    navigator.clipboard.writeText(raw).then(()=>{ e.target.textContent='복사됨 ✓'; setTimeout(()=>e.target.textContent='복사',1400); });
-  });
-});
-
-// 네비 활성 표시
-const links = [...document.querySelectorAll('nav a[href^="#"]')];
-const io = new IntersectionObserver(entries => {
-  entries.forEach(en => {
-    if (en.isIntersecting) {
-      links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#'+en.target.id));
+  <script>
+    /* ===== 편집 가능한 데이터 ===== */
+    const TOKEN_DATA = [
+      { phase: 'e약은요 통합·약 필터', tokens: 28000 },
+      { phase: '검색 우선순위·매핑 확장', tokens: 32000 },
+      { phase: '환각 제거·성분 검증', tokens: 26000 },
+      { phase: '동적 성분 해석(제품허가)', tokens: 41000 },
+      { phase: '약 관리(촬영일·그룹)', tokens: 30000 },
+      { phase: '정보 패널·UI 복구', tokens: 22000 },
+      { phase: '로그인 게이트', tokens: 18000 },
+      { phase: '문서·보고서', tokens: 15000 },
+    ];
+    const PHASES = [
+      {
+        no: 'P0', title: '초기 구축 · 핵심 기능', out: '촬영→분석 플로우 완성', items: [
+          '약봉투를 촬영하면 OCR로 약품을 인식하는 모바일 웹앱을 만들어줘',
+          '복용 약과 음식·영양제의 상호작용을 AI(LLM)로 분석해줘',
+          'Google 로그인, 내 약 관리, 프로필 화면을 추가해줘',
+          'DrugBank 데이터로 검증하고, 다크 테마 v2 버전도 만들어줘',
+        ]
+      },
+      {
+        no: 'P1', title: '데이터 정확도 향상', out: '식약처 통합·검색 개선', items: [
+          '식약처 e약은요 정보를 분석 근거로 함께 활용해줘',
+          '결과 화면에 "이번 검색 약만 / 내 약 모두" 필터 버튼을 추가해줘',
+          '약 성분으로는 검색되는데 약 이름으론 못 찾아 — 검색 우선순위를 바꿔줘',
+        ]
+      },
+      {
+        no: 'P2', title: '신뢰성 — 환각 제거', out: '근거 없는 답변 차단', items: [
+          '없는 약인데 엉뚱한 상호작용 12건이 뜨고 잘못된 설명을 해 (환각)',
+          '성분을 틀리게 말하는데 — 정확한 성분을 찾아줘 (카데프엘릭서=디곡신)',
+          '데이터에 없으면 추측하지 말고 "정보 없음"으로 답하게 해줘',
+        ]
+      },
+      {
+        no: 'P3', title: '확장성 — 동적 성분 해석', out: '하드코딩 없이 임의 약 처리', items: [
+          '이런 문제(미등록 약)가 한두 개가 아닐 텐데 — 근본 해결책이 필요해',
+          '식약처 제품허가 API로 약 이름→공식 성분을 실시간으로 가져와줘 (해봐)',
+        ]
+      },
+      {
+        no: 'P4', title: 'UX 개선 · 정보 보강', out: '관리·정보 패널 강화', items: [
+          '약 관리에 촬영 날짜를 기록하고, 함께 촬영된 약을 묶어서 관리하게 해줘',
+          'ℹ️ 정보 패널이 흔한 약(암로디핀·와파린)도 못 찾아 — 제품허가 API도 쓰게 해줘',
+          'v2에도 동일하게 적용해줘 / UI가 깨졌어 (복구)',
+        ]
+      },
+      {
+        no: 'P5', title: '접근 제어 · 문서화', out: '권한 분리 + 보고서', items: [
+          '비로그인은 약 인식까지만, 검증 결과는 로그인해야 보게 만들어줘',
+          '데이터·API·기술스택과 RAG 파이프라인을 정리해줘 (LangChain 미사용 확인)',
+          'HTML/CSS/JS로 개발 보고서를 만들어줘 — 구성·문제해결 중심으로',
+        ]
+      },
+    ];
+    /* ===== 렌더링 ===== */
+    const fmt = n => n.toLocaleString('ko-KR');
+    document.getElementById('prompt-list').innerHTML = PHASES.map(ph =>
+      `<div class="phase"><div class="ph-head"><span class="ph-no">${ph.no}</span><span class="ph-title">${ph.title}</span><span class="ph-out">${ph.out}</span></div>` +
+      `<ul class="ph-prompts">${ph.items.map(t => `<li>"${t}"</li>`).join('')}</ul></div>`).join('');
+    const total = TOKEN_DATA.reduce((s, d) => s + d.tokens, 0), max = Math.max(...TOKEN_DATA.map(d => d.tokens));
+    document.getElementById('tok-total').textContent = fmt(total);
+    document.getElementById('tok-avg').textContent = fmt(Math.round(total / TOKEN_DATA.length));
+    document.getElementById('token-bars').innerHTML = TOKEN_DATA.map(d =>
+      `<div class="bar-row"><span>${d.phase}</span><div class="bar-track"><div class="bar-fill" style="width:${(d.tokens / max * 100).toFixed(1)}%"></div></div><span class="bar-val">${fmt(d.tokens)}</span></div>`).join('');
+    function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+    function highlight(code) {
+      const re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|(`(?:\\.|[^`\\])*`|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|\b(const|let|var|function|return|if|else|for|await|async|import|export|from|new|interface|type|class|extends|of|in|null|true|false|void|Promise|Map|Set|Object)\b/g;
+      return esc(code).replace(re, (m, c, s, k) => c ? `<span class="c">${c}</span>` : s ? `<span class="s">${s}</span>` : k ? `<span class="k">${k}</span>` : m);
     }
-  });
-}, { rootMargin: '-45% 0px -50% 0px' });
-document.querySelectorAll('section[id]').forEach(s => io.observe(s));
-</script>
+    document.querySelectorAll('.code').forEach(block => {
+      const raw = block.querySelector('script').textContent.replace(/^\n/, '').replace(/\s+$/, '');
+      const file = block.dataset.file || 'code', desc = block.dataset.desc || '';
+      block.innerHTML = `<div class="bar"><span class="file">${file}</span><button class="copy">복사</button></div><pre>${highlight(raw)}</pre>` + (desc ? `<div class="desc">💡 ${desc}</div>` : '');
+      block.querySelector('.copy').addEventListener('click', e => navigator.clipboard.writeText(raw).then(() => { e.target.textContent = '복사됨 ✓'; setTimeout(() => e.target.textContent = '복사', 1400); }));
+    });
+    const links = [...document.querySelectorAll('nav a[href^="#"]')];
+    const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id)); }), { rootMargin: '-45% 0px -50% 0px' });
+    document.querySelectorAll('section[id]').forEach(s => io.observe(s));
+
+    /* ===== 사용자 흐름 — 자동 재생 + 주요 로직 ===== */
+    const FLOW = [
+      { ic: '🏠', route: '/', name: '홈 / 대시보드', logic: '로컬에 저장된 약 그룹을 불러와 대시보드 요약을 렌더. 촬영·내 약·검증 등 주요 기능으로 분기하는 진입점.', tech: 'localStorage · 그룹 로드' },
+      { ic: '📷', route: '/scan', name: '약봉투 촬영', logic: '약봉투 이미지 업로드 → Google Vision OCR로 텍스트화 → 이름·주민번호·병원명 등 개인정보 자동 마스킹 → 약품명 파싱.', tech: '/api/ocr · Vision OCR' },
+      { ic: '✅', route: '/drugs', name: '인식 약품 확인·저장', logic: 'OCR 인식 결과를 사용자가 수정·추가한 뒤, 촬영일·그룹 단위로 묶어 로컬에 저장(기존 데이터 무손실 마이그레이션).', tech: 'storage.ts · 그룹 저장' },
+      { ic: '🍎', route: '/food', name: '음식·영양제 입력', logic: '식품 텍스트 자동완성으로 검색하거나, 음식 사진을 Gemini Vision으로 인식해 입력 목록에 추가.', tech: '/api/food-recognize · 자동완성' },
+      { ic: '🔒', route: '/login', name: '로그인 게이트', logic: '검증 직전 Google OAuth 게이트. 입력 상태를 보존하고 로그인 후 원래 위치로 복귀(next).', tech: 'OAuth · next 복귀' },
+      { ic: '🩺', route: '/result', name: '검증 결과', logic: '약품명을 공식 영문 성분으로 변환 → DrugBank·식약처 데이터 교차검색(RAG) → Gemini가 안전·주의·위험 3단계 위험도와 근거·출처를 생성.', tech: '/api/safety-check · RAG + LLM' },
+    ];
+    (function () {
+      const wrap = document.getElementById('userflow'); if (!wrap) return;
+      const steps = [...wrap.querySelectorAll('.step')];
+      const seps = [...wrap.querySelectorAll('.sep')];
+      const panel = document.getElementById('flow-logic');
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      let i = 0, timer = null, paused = false;
+      function render(idx) {
+        const f = FLOW[idx];
+        steps.forEach((s, k) => { s.classList.toggle('on', k === idx); s.classList.toggle('done', k < idx); });
+        seps.forEach((s, k) => s.classList.toggle('on', k === idx - 1));   // 방금 지나온 화살표 점등
+        if (!reduce) { panel.classList.remove('swap'); void panel.offsetWidth; panel.classList.add('swap'); }
+        panel.innerHTML =
+          `<div class="fl-ic">${f.ic}</div><div class="fl-body">` +
+          `<div class="fl-head"><span class="fl-route">${f.route}</span><span class="fl-name">${f.name}</span><span class="fl-step">${idx + 1} / ${FLOW.length}</span></div>` +
+          `<div class="fl-logic">${f.logic}</div><span class="fl-tech">${f.tech}</span></div>`;
+      }
+      function play() { if (timer || reduce) return; timer = setInterval(() => { if (!paused) { i = (i + 1) % FLOW.length; render(i); } }, 1700); }
+      function stop() { clearInterval(timer); timer = null; }
+      steps.forEach((s, k) => s.addEventListener('click', () => { i = k; render(i); }));
+      [wrap, panel].forEach(el => { el.addEventListener('mouseenter', () => paused = true); el.addEventListener('mouseleave', () => paused = false); });
+      render(0);
+      const vio = new IntersectionObserver(es => es.forEach(en => en.isIntersecting ? play() : stop()), { threshold: .25 });
+      vio.observe(wrap);
+    })();
+  </script>
 </body>
+
 </html>
