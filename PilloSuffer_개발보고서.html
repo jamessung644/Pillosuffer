@@ -1035,75 +1035,6 @@
       font-weight: 800
     }
 
-    /* 토큰 */
-    .token-total {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 20px
-    }
-
-    .token-total .box {
-      flex: 1;
-      min-width: 150px;
-      background: linear-gradient(135deg, #2563eb, #0ea5e9);
-      color: #fff;
-      border-radius: 16px;
-      padding: 17px 20px
-    }
-
-    .token-total .box.alt {
-      background: linear-gradient(135deg, #0f766e, #14b8a6)
-    }
-
-    .token-total .box.gray {
-      background: #fff;
-      border: 1px solid var(--line);
-      color: var(--ink)
-    }
-
-    .token-total .k {
-      font-size: 12.5px;
-      opacity: .85;
-      font-weight: 600
-    }
-
-    .token-total .v {
-      font-size: 29px;
-      font-weight: 800;
-      letter-spacing: -1px;
-      margin-top: 2px
-    }
-
-    .bar-row {
-      display: grid;
-      grid-template-columns: 185px 1fr 78px;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 8px;
-      font-size: 13px
-    }
-
-    .bar-track {
-      background: #e2e8f0;
-      border-radius: 999px;
-      height: 15px;
-      overflow: hidden
-    }
-
-    .bar-fill {
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #2563eb, #38bdf8)
-    }
-
-    .bar-val {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      font-weight: 700;
-      color: var(--muted)
-    }
-
     .note {
       font-size: 12.5px;
       color: var(--muted);
@@ -1216,10 +1147,6 @@
         font-size: 31px
       }
 
-      .bar-row {
-        grid-template-columns: 108px 1fr 60px
-      }
-
       nav a {
         display: none
       }
@@ -1295,7 +1222,6 @@
       <a href="#solve">문제해결</a>
       <a href="#timeline">일정</a>
       <a href="#prompts">프롬프트</a>
-      <a href="#tokens">토큰</a>
       <a href="#code">코드</a>
       <button class="print-btn" onclick="window.print()">🖨 PDF</button>
     </div>
@@ -1857,35 +1783,10 @@
     </div>
   </section>
 
-  <!-- 8. 토큰 -->
-  <section id="tokens">
-    <div class="wrap">
-      <h2><span class="num">8</span>토큰 사용량</h2>
-      <p class="sub">단계별 토큰 소비 추정</p>
-      <div class="token-total">
-        <div class="box">
-          <div class="k">총 토큰 (추정)</div>
-          <div class="v" id="tok-total">—</div>
-        </div>
-        <div class="box alt">
-          <div class="k">개발 단계</div>
-          <div class="v">8</div>
-        </div>
-        <div class="box gray">
-          <div class="k">평균 / 단계</div>
-          <div class="v" id="tok-avg">—</div>
-        </div>
-      </div>
-      <div id="token-bars"></div>
-      <div class="note">⚠️ <b>추정치입니다.</b> 정확한 수치는 Claude 사용량 대시보드에서 확인 후 파일 하단 <span
-          class="inline-code">TOKEN_DATA</span> 배열을 수정하세요.</div>
-    </div>
-  </section>
-
-  <!-- 9. 코드 -->
+  <!-- 8. 코드 -->
   <section id="code">
     <div class="wrap">
-      <h2><span class="num">9</span>중요한 코드</h2>
+      <h2><span class="num">8</span>중요한 코드</h2>
       <p class="sub">프로젝트의 핵심 5개 (복사 가능)</p>
 
       <h3><span class="dot"></span>① 동적 성분 해석 — 임의의 약 → 공식 영문 성분</h3>
@@ -2009,16 +1910,6 @@ useEffect(() => {
 
   <script>
     /* ===== 편집 가능한 데이터 ===== */
-    const TOKEN_DATA = [
-      { phase: 'e약은요 통합·약 필터', tokens: 28000 },
-      { phase: '검색 우선순위·매핑 확장', tokens: 32000 },
-      { phase: '환각 제거·성분 검증', tokens: 26000 },
-      { phase: '동적 성분 해석(제품허가)', tokens: 41000 },
-      { phase: '약 관리(촬영일·그룹)', tokens: 30000 },
-      { phase: '정보 패널·UI 복구', tokens: 22000 },
-      { phase: '로그인 게이트', tokens: 18000 },
-      { phase: '문서·보고서', tokens: 15000 },
-    ];
     const PHASES = [
       {
         no: 'P0', title: '초기 구축 · 핵심 기능', out: '촬영→분석 플로우 완성', items: [
@@ -2064,15 +1955,9 @@ useEffect(() => {
       },
     ];
     /* ===== 렌더링 ===== */
-    const fmt = n => n.toLocaleString('ko-KR');
     document.getElementById('prompt-list').innerHTML = PHASES.map(ph =>
       `<div class="phase"><div class="ph-head"><span class="ph-no">${ph.no}</span><span class="ph-title">${ph.title}</span><span class="ph-out">${ph.out}</span></div>` +
       `<ul class="ph-prompts">${ph.items.map(t => `<li>"${t}"</li>`).join('')}</ul></div>`).join('');
-    const total = TOKEN_DATA.reduce((s, d) => s + d.tokens, 0), max = Math.max(...TOKEN_DATA.map(d => d.tokens));
-    document.getElementById('tok-total').textContent = fmt(total);
-    document.getElementById('tok-avg').textContent = fmt(Math.round(total / TOKEN_DATA.length));
-    document.getElementById('token-bars').innerHTML = TOKEN_DATA.map(d =>
-      `<div class="bar-row"><span>${d.phase}</span><div class="bar-track"><div class="bar-fill" style="width:${(d.tokens / max * 100).toFixed(1)}%"></div></div><span class="bar-val">${fmt(d.tokens)}</span></div>`).join('');
     function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
     function highlight(code) {
       const re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|(`(?:\\.|[^`\\])*`|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")|\b(const|let|var|function|return|if|else|for|await|async|import|export|from|new|interface|type|class|extends|of|in|null|true|false|void|Promise|Map|Set|Object)\b/g;
