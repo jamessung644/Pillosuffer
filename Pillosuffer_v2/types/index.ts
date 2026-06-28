@@ -55,3 +55,11 @@ export interface EdrugInfo {
   intrcQesitm: string | null     // 병용금기·상호작용 (가장 중요)
   seQesitm: string | null        // 부작용
 }
+
+/** 식약처 제품허가 API 기반 약품 식별 프로필 — LLM에 정확한 성분·분류 전달용 */
+export interface DrugProfile {
+  name: string                   // 사용자 입력 약품명
+  ingredientKor: string | null   // 한글 주성분
+  ingredientEng: string[]        // 영문 성분명
+  productType: string | null     // 분류 (예: 강심제)
+}

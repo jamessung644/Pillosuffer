@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/BottomNav'
 import { useAuth } from '@/components/AuthProvider'
 import { compressImage } from '@/lib/image'
+import { getSavedDrugs } from '@/lib/storage'
+import type { DrugInfo } from '@/types'
 
 const COMMON_FOODS = [
   '자몽', '우유', '알코올', '녹차', '커피',
@@ -36,12 +38,21 @@ export default function FoodPage() {
   const [suggestions, setSuggestions] = useState<FoodResult[]>([])
   const [searching, setSearching] = useState(false)
   const [hasDrugs, setHasDrugs] = useState(true)
+  const [savedDrugs, setSavedDrugs] = useState<DrugInfo[]>([])
+  const [selectedDrugs, setSelectedDrugs] = useState<string[]>([])
 
   useEffect(() => {
-    const hasSession = !!sessionStorage.getItem('drugList')
-    const hasSaved = !!localStorage.getItem('savedMedications')
-    setHasDrugs(hasSession || hasSaved)
+    const saved = getSavedDrugs()
+    setSavedDrugs(saved)
+    setSelectedDrugs(saved.map(d => d.name))   // 기본: 전체 선택
+    setHasDrugs(saved.length > 0)
   }, [])
+
+  function toggleDrug(name: string) {
+    setSelectedDrugs(prev =>
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    )
+  }
 
   function addFood(name: string) {
     const trimmed = name.trim()
@@ -124,8 +135,18 @@ export default function FoodPage() {
 
   function proceed() {
     if (!foods.length) return
+    const chosen = savedDrugs.filter(d => selectedDrugs.includes(d.name))
+    if (savedDrugs.length > 0 && chosen.length === 0) {
+      alert('상호작용을 확인할 약을 1개 이상 선택해 주세요.')
+      return
+    }
     // 입력은 미리 저장 (로그인 왕복 후에도 유지) → 검증 결과는 로그인 필요
     sessionStorage.setItem('foodList', JSON.stringify(foods))
+    if (chosen.length > 0) {
+      sessionStorage.setItem('selectedDrugs', JSON.stringify(chosen))
+    } else {
+      sessionStorage.removeItem('selectedDrugs')
+    }
     if (!user) {
       router.push(`/login?next=${encodeURIComponent('/result')}`)
       return
@@ -166,6 +187,36 @@ export default function FoodPage() {
           >
             등록
           </button>
+        </div>
+      )}
+
+      {/* 확인할 내 약 선택 */}
+      {savedDrugs.length > 0 && (
+        <div className="mb-5">
+          <p className="text-sm font-semibold text-zinc-100">
+            확인할 내 약 <span className="text-zinc-500 font-medium">· 탭하여 선택</span>
+          </p>
+          <p className="text-xs text-zinc-500 mt-0.5 mb-2.5">
+            선택한 약만 음식과 비교합니다 ({selectedDrugs.length}/{savedDrugs.length})
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {savedDrugs.map(d => {
+              const on = selectedDrugs.includes(d.name)
+              return (
+                <button
+                  key={d.name}
+                  onClick={() => toggleDrug(d.name)}
+                  className={`px-3.5 py-2 rounded-full text-sm font-semibold border transition-colors ${
+                    on
+                      ? 'bg-accent-sky text-ink-950 border-accent-sky'
+                      : 'bg-white/[0.04] text-zinc-300 border-white/[0.08]'
+                  }`}
+                >
+                  {on ? '✓ ' : ''}{d.name}
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 

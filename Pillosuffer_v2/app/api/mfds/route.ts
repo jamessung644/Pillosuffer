@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { queryMfds } from '@/lib/mfds'
 import { queryEdrugInfo } from '@/lib/edruginfo'
+import { resolveDrugProfiles } from '@/lib/ingredient'
 import type { DrugInfo } from '@/types'
 
 export async function POST(request: NextRequest) {
@@ -14,9 +15,10 @@ export async function POST(request: NextRequest) {
     }
 
     // DrugBank DB + e약은요 API 병렬 조회
-    const [contraindications, edrugInfo] = await Promise.all([
+    const [contraindications, edrugInfo, drugProfiles] = await Promise.all([
       queryMfds(drugs, foods),
       queryEdrugInfo(drugs),
+      resolveDrugProfiles(drugs),
     ])
 
     const matchCount = contraindications.length
@@ -30,6 +32,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       contraindications,
       edrugInfo,
+      drugProfiles,
       matchCount,
       searchedDrugs: drugs.length,
       searchedFoods: foods.length,

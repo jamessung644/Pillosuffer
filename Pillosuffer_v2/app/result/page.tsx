@@ -38,7 +38,15 @@ export default function ResultPage() {
       let drugs: DrugInfo[] = []
       let sessionNames: string[] = []
 
-      if (sessionDrugsRaw) {
+      // 음식 페이지에서 직접 선택한 약이 있으면 그 약만 분석
+      const selectedRaw = sessionStorage.getItem('selectedDrugs')
+      const selected: DrugInfo[] = selectedRaw ? JSON.parse(selectedRaw) : []
+
+      if (selected.length) {
+        drugs = selected
+        sessionNames = selected.map(d => d.name)
+        setHasBothSources(false)
+      } else if (sessionDrugsRaw) {
         const sessionDrugs: DrugInfo[] = JSON.parse(sessionDrugsRaw)
         sessionNames = sessionDrugs.map(d => d.name)
         if (savedDrugsRaw) {
@@ -83,6 +91,7 @@ export default function ResultPage() {
           foods,
           mfdsContext: mfdsData.contraindications || [],
           edrugInfo: mfdsData.edrugInfo || [],
+          drugProfiles: mfdsData.drugProfiles || [],
         }),
       })
       const safetyData: SafetyResult = await safetyRes.json()
