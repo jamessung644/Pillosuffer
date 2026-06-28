@@ -1,39 +1,23 @@
 import Link from 'next/link'
 import BottomNav from '@/components/BottomNav'
+import Icon from '@/components/Icon'
+import Logo from '@/components/Logo'
 
-interface BigCardProps {
+interface TileProps {
   href: string
   icon: string
   title: string
-  desc: string
+  color: string
 }
 
-function BigCard({ href, icon, title, desc }: BigCardProps) {
+function Tile({ href, icon, title, color }: TileProps) {
   return (
     <Link
       href={href}
-      className="block bg-white border border-gray-100 rounded-3xl p-7 shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-[0.98] active:bg-gray-50 transition-all"
+      className={`flex flex-col items-center justify-center gap-3 rounded-3xl p-6 min-h-[140px] text-white shadow-sm active:scale-[0.97] transition-transform ${color}`}
     >
-      <div className="flex flex-col h-full justify-between min-h-[140px]">
-        <span className="text-5xl">{icon}</span>
-        <div>
-          <p className="text-xl font-bold text-gray-900 leading-tight">{title}</p>
-          <p className="text-sm text-gray-400 mt-1">{desc}</p>
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-function SmallCard({ href, icon, title }: { href: string; icon: string; title: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-5 py-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:bg-gray-50 transition-colors"
-    >
-      <span className="text-2xl">{icon}</span>
-      <p className="text-base font-semibold text-gray-900 flex-1">{title}</p>
-      <span className="text-gray-300 text-xl font-light">›</span>
+      <Icon name={icon} size={38} stroke={2.2} />
+      <span className="text-xl font-extrabold tracking-tight">{title}</span>
     </Link>
   )
 }
@@ -42,50 +26,43 @@ export default function HomePage() {
   return (
     <div className="page-padding flex flex-col min-h-screen bg-gray-50">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-8 pt-2">
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">PilloSuffer</h1>
-        <Link
-          href="/profile"
-          aria-label="내 정보"
-          className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center active:bg-gray-50 transition-colors"
-        >
-          <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </Link>
+      <div className="mb-5 pt-1">
+        <h1 className="text-[34px] leading-tight font-black text-gray-900 tracking-tight">뭐무꼬</h1>
+        <p className="text-[15px] text-gray-500 mt-1 font-semibold">약과 음식을 함께 먹어도 되는지 알려드려요</p>
       </div>
 
-      {/* 큰 카드 2개 */}
-      <div className="space-y-4 mb-4">
-        <BigCard
-          href="/scan"
-          icon="📷"
-          title="약봉투 촬영하기"
-          desc="약 정보를 자동으로 저장합니다"
-        />
-        <BigCard
-          href="/food"
-          icon="🍎"
-          title="음식 사진 촬영하기"
-          desc="음식·영양제 안전 여부 확인"
-        />
+      {/* 히어로 카드 */}
+      <div className="flex items-center gap-3 rounded-3xl p-5 mb-5 bg-[#EAF2FE]">
+        <div className="flex-1 min-w-0">
+          <p className="text-[19px] font-extrabold text-gray-900 leading-snug">오늘 먹을 약과 음식<br />같이 먹어도 될까요?</p>
+          <p className="text-[13px] text-gray-500 mt-2 font-medium">시작하려면 약 봉투를 찍어주세요.</p>
+        </div>
+        <div className="w-16 h-16 rounded-2xl bg-white/80 flex items-center justify-center flex-shrink-0"><Logo size={46} /></div>
       </div>
 
-      {/* 작은 카드 */}
-      <SmallCard
-        href="/my-meds"
-        icon="📋"
-        title="내 약 관리"
-      />
+      {/* 기능 타일 2×2 */}
+      <div className="grid grid-cols-2 gap-4">
+        <Tile href="/scan"     icon="camera"    title="약 봉투 찍기" color="bg-[#4D9BF5]" />
+        <Tile href="/food"     icon="bowl"      title="음식 확인"   color="bg-[#F3A45C]" />
+        <Tile href="/my-meds"  icon="clipboard" title="약 관리"     color="bg-[#5BBE88]" />
+        <Tile href="/profile"  icon="user"      title="내 정보"     color="bg-[#6E7884]" />
+      </div>
 
       {/* 면책 */}
-      <div className="mt-auto pt-8">
-        <p className="text-center text-xs text-gray-300 leading-relaxed">
-          참고용 서비스 · 의학적 판단 대체 불가
-        </p>
+      <div className="flex items-start gap-2.5 mt-6 mb-3 px-1">
+        <span className="text-blue-500 flex-shrink-0 mt-0.5"><Icon name="alert" size={18} stroke={2.4} /></span>
+        <p className="text-sm text-gray-500 leading-relaxed font-medium">이 정보는 참고용입니다. 정확한 판단은 약사·의사에게 확인하세요.</p>
       </div>
 
+      {/* 응급 (테두리형) */}
+      <a
+        href="tel:119"
+        className="flex items-center justify-center gap-2 rounded-2xl py-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold text-[17px] active:bg-red-100 transition-colors"
+      >
+        응급 상황은 119에 연락하세요
+      </a>
+
+      <div className="mt-auto" />
       <BottomNav />
     </div>
   )

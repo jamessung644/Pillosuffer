@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Icon from '@/components/Icon'
 import type { DrugInfo } from '@/types'
 import type { EasyDrugInfo } from '@/lib/easyDrug'
 import type { ResolvedIngredient } from '@/lib/ingredient'
@@ -21,10 +22,7 @@ export default function DrugCard({ drug, index, onUpdate, onDelete }: Props) {
   const [infoState, setInfoState] = useState<'idle' | 'loading' | 'notfound' | 'error'>('idle')
 
   async function toggleInfo() {
-    if (infoOpen) {
-      setInfoOpen(false)
-      return
-    }
+    if (infoOpen) { setInfoOpen(false); return }
     setInfoOpen(true)
     if (info || permit || infoState === 'loading') return
     setInfoState('loading')
@@ -48,174 +46,80 @@ export default function DrugCard({ drug, index, onUpdate, onDelete }: Props) {
     setEditing(false)
   }
 
-  const meta = [drug.dose, drug.frequency, drug.days, drug.usage].filter(Boolean).join(' · ')
-
   if (editing) {
     return (
       <div className="bg-white rounded-2xl border border-blue-200 p-4 shadow-sm">
         <div className="space-y-3">
-          <div>
-            <label className="text-xs text-gray-500 font-medium">약품명</label>
-            <input
-              className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={draft.name}
-              onChange={e => setDraft({ ...draft, name: e.target.value })}
-            />
-          </div>
+          <Field label="약 이름" value={draft.name} onChange={v => setDraft({ ...draft, name: v })} />
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 font-medium">함량</label>
-              <input
-                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="예: 500mg"
-                value={draft.dose || ''}
-                onChange={e => setDraft({ ...draft, dose: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 font-medium">투여횟수</label>
-              <input
-                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="예: 1일 3회"
-                value={draft.frequency || ''}
-                onChange={e => setDraft({ ...draft, frequency: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 font-medium">투약 일수</label>
-              <input
-                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="예: 3일"
-                value={draft.days || ''}
-                onChange={e => setDraft({ ...draft, days: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 font-medium">용법</label>
-              <input
-                className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="예: 식후 30분"
-                value={draft.usage || ''}
-                onChange={e => setDraft({ ...draft, usage: e.target.value })}
-              />
-            </div>
+            <Field label="용량" placeholder="500mg" value={draft.dose} onChange={v => setDraft({ ...draft, dose: v })} />
+            <Field label="하루 몇 번" placeholder="1일 3회" value={draft.frequency} onChange={v => setDraft({ ...draft, frequency: v })} />
+            <Field label="며칠 동안" placeholder="3일" value={draft.days} onChange={v => setDraft({ ...draft, days: v })} />
+            <Field label="언제 먹나요" placeholder="식후 30분" value={draft.usage} onChange={v => setDraft({ ...draft, usage: v })} />
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={save}
-              className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium"
-            >
-              저장
-            </button>
-            <button
-              onClick={() => { setDraft(drug); setEditing(false) }}
-              className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium"
-            >
-              취소
-            </button>
+          <div className="flex gap-2 pt-1">
+            <button onClick={save} className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-base font-bold active:bg-blue-700">저장</button>
+            <button onClick={() => { setDraft(drug); setEditing(false) }} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl text-base font-bold">취소</button>
           </div>
         </div>
       </div>
     )
   }
 
+  const chips = [
+    drug.dose && { t: drug.dose, c: 'bg-gray-100 text-gray-500' },
+    drug.frequency && { t: drug.frequency, c: 'bg-blue-50 text-blue-600' },
+    drug.days && { t: drug.days, c: 'bg-indigo-50 text-indigo-600' },
+    drug.usage && { t: drug.usage, c: 'bg-green-50 text-green-600' },
+  ].filter(Boolean) as { t: string; c: string }[]
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <span className="text-lg">💊</span>
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-gray-800">{drug.name}</p>
-            {meta ? (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {drug.dose && (
-                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{drug.dose}</span>
-                )}
-                {drug.frequency && (
-                  <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{drug.frequency}</span>
-                )}
-                {drug.days && (
-                  <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">{drug.days}</span>
-                )}
-                {drug.usage && (
-                  <span className="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">{drug.usage}</span>
-                )}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400 mt-0.5">정보 없음</p>
-            )}
-          </div>
+      {/* 상단: 아이콘 + 이름 */}
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-500">
+          <Icon name="pill" size={22} />
         </div>
-        <div className="flex gap-2 flex-shrink-0">
-          <button
-            onClick={toggleInfo}
-            className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-500 text-sm"
-            title="식약처 e약은요 정보"
-          >
-            ℹ️
-          </button>
-          <button
-            onClick={() => setEditing(true)}
-            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-500 text-sm"
-          >
-            ✏️
-          </button>
-          <button
-            onClick={() => onDelete(index)}
-            className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-400 text-sm"
-          >
-            🗑️
-          </button>
-        </div>
+        <p className="text-lg font-bold text-gray-900 min-w-0 truncate">{drug.name}</p>
       </div>
 
+      {/* 칩 */}
+      {chips.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3 pl-1">
+          {chips.map((ch, i) => (
+            <span key={i} className={`text-sm font-semibold px-3 py-1 rounded-full ${ch.c}`}>{ch.t}</span>
+          ))}
+        </div>
+      )}
+
+      {/* 액션 */}
+      <div className="flex gap-2 mt-3.5 pt-3.5 border-t border-gray-100">
+        <ActionBtn icon="info" label="정보" onClick={toggleInfo} active={infoOpen} />
+        <ActionBtn icon="pencil" label="수정" onClick={() => setEditing(true)} />
+        <ActionBtn icon="trash" label="삭제" onClick={() => onDelete(index)} danger />
+      </div>
+
+      {/* 정보 패널 */}
       {infoOpen && (
-        <div className="mt-3 pt-3 border-t border-gray-100 text-sm space-y-2">
-          {infoState === 'loading' && (
-            <p className="text-gray-400 text-xs">약품 정보를 불러오는 중…</p>
-          )}
-          {infoState === 'notfound' && (
-            <p className="text-gray-400 text-xs">식약처 DB에서 "{drug.name}" 정보를 찾지 못했어요. 제품명으로 다시 시도해 보세요.</p>
-          )}
-          {infoState === 'error' && (
-            <p className="text-red-400 text-xs">약품 정보 API 호출에 실패했어요.</p>
-          )}
+        <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+          {infoState === 'loading' && <p className="text-gray-400 text-sm">약품 정보를 불러오는 중…</p>}
+          {infoState === 'notfound' && <p className="text-gray-400 text-sm">DB에서 &quot;{drug.name}&quot; 정보를 찾지 못했어요.</p>}
+          {infoState === 'error' && <p className="text-red-400 text-sm">정보 조회에 실패했어요.</p>}
           {permit && (
-            <div className="rounded-xl p-2.5 bg-indigo-50 text-indigo-700">
-              <p className="text-[11px] font-semibold mb-1 opacity-70">성분·분류 · 식약처 제품허가</p>
-              <p className="text-xs leading-relaxed">
-                성분: {permit.eng.join(', ')}{permit.kor ? ` (${permit.kor})` : ''}
-              </p>
-              {permit.productType && <p className="text-xs leading-relaxed mt-0.5">분류: {permit.productType}</p>}
-              {permit.entpName && <p className="text-xs leading-relaxed mt-0.5">제조사: {permit.entpName}</p>}
+            <div className="rounded-xl p-3 bg-indigo-50 text-indigo-700">
+              <p className="text-xs font-bold mb-1 opacity-70">성분·분류 · 식약처 제품허가</p>
+              <p className="text-sm leading-relaxed">성분: {permit.eng.join(', ')}{permit.kor ? ` (${permit.kor})` : ''}</p>
+              {permit.productType && <p className="text-sm leading-relaxed mt-0.5">분류: {permit.productType}</p>}
+              {permit.entpName && <p className="text-sm leading-relaxed mt-0.5">제조사: {permit.entpName}</p>}
             </div>
           )}
           {info && (
             <>
-              {info.entpName && (
-                <p className="text-xs text-gray-400">제조사: {info.entpName}</p>
-              )}
-              {info.efcyQesitm && (
-                <InfoBlock label="효능" color="blue" text={info.efcyQesitm} />
-              )}
-              {info.useMethodQesitm && (
-                <InfoBlock label="사용법" color="green" text={info.useMethodQesitm} />
-              )}
-              {info.atpnWarnQesitm && (
-                <InfoBlock label="경고" color="red" text={info.atpnWarnQesitm} />
-              )}
-              {info.atpnQesitm && (
-                <InfoBlock label="주의사항" color="amber" text={info.atpnQesitm} />
-              )}
-              {info.intrcQesitm && (
-                <InfoBlock label="상호작용" color="purple" text={info.intrcQesitm} />
-              )}
-              {info.seQesitm && (
-                <InfoBlock label="부작용" color="rose" text={info.seQesitm} />
-              )}
-              <p className="text-[10px] text-gray-300 pt-1">출처: 식약처 e약은요</p>
+              {info.efcyQesitm && <InfoBlock label="효능" color="blue" text={info.efcyQesitm} />}
+              {info.atpnQesitm && <InfoBlock label="주의사항" color="amber" text={info.atpnQesitm} />}
+              {info.intrcQesitm && <InfoBlock label="상호작용" color="purple" text={info.intrcQesitm} />}
+              {info.seQesitm && <InfoBlock label="부작용" color="rose" text={info.seQesitm} />}
+              <p className="text-[11px] text-gray-300 pt-1">출처: 식약처 e약은요</p>
             </>
           )}
         </div>
@@ -224,19 +128,45 @@ export default function DrugCard({ drug, index, onUpdate, onDelete }: Props) {
   )
 }
 
+function ActionBtn({ icon, label, onClick, danger, active }: { icon: string; label: string; onClick: () => void; danger?: boolean; active?: boolean }) {
+  const cls = danger
+    ? 'bg-red-50 text-red-500 active:bg-red-100'
+    : active
+      ? 'bg-blue-50 text-blue-600'
+      : 'bg-gray-50 text-gray-600 active:bg-gray-100'
+  return (
+    <button onClick={onClick} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold transition-colors ${cls}`}>
+      <Icon name={icon} size={17} />
+      {label}
+    </button>
+  )
+}
+
+function Field({ label, value, onChange, placeholder }: { label: string; value?: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div>
+      <label className="text-xs text-gray-500 font-semibold">{label}</label>
+      <input
+        className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+        value={value || ''}
+        placeholder={placeholder}
+        onChange={e => onChange(e.target.value)}
+      />
+    </div>
+  )
+}
+
 function InfoBlock({ label, text, color }: { label: string; text: string; color: string }) {
   const bg: Record<string, string> = {
     blue: 'bg-blue-50 text-blue-700',
-    green: 'bg-green-50 text-green-700',
-    red: 'bg-red-50 text-red-700',
     amber: 'bg-amber-50 text-amber-700',
     purple: 'bg-purple-50 text-purple-700',
     rose: 'bg-rose-50 text-rose-700',
   }
   return (
-    <div className={`rounded-xl p-2.5 ${bg[color] ?? 'bg-gray-50 text-gray-700'}`}>
-      <p className="text-[11px] font-semibold mb-1 opacity-70">{label}</p>
-      <p className="text-xs leading-relaxed whitespace-pre-line">{text}</p>
+    <div className={`rounded-xl p-3 ${bg[color] ?? 'bg-gray-50 text-gray-700'}`}>
+      <p className="text-xs font-bold mb-1 opacity-70">{label}</p>
+      <p className="text-sm leading-relaxed whitespace-pre-line">{text}</p>
     </div>
   )
 }

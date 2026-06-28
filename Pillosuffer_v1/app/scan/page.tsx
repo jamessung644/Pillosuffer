@@ -4,9 +4,11 @@ import { useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { maskPII, parseDrugs } from '@/lib/masking'
 import { compressImage } from '@/lib/image'
+import Icon from '@/components/Icon'
+import StepProgress from '@/components/StepProgress'
 import type { ScanSession } from '@/types'
 
-type Step = 'upload' | 'processing' | 'done'
+type Step = 'upload' | 'processing'
 
 export default function ScanPage() {
   const router = useRouter()
@@ -21,7 +23,6 @@ export default function ScanPage() {
     setStep('processing')
     setProgress(0)
     setError(null)
-
     try {
       const reader = new FileReader()
       const dataUrl = await new Promise<string>((resolve) => {
@@ -29,58 +30,42 @@ export default function ScanPage() {
         reader.readAsDataURL(file)
       })
       setImageDataUrl(dataUrl)
-      setProgress(10)
-      setStatusText('이미지 로드 완료')
-
-      setProgress(20)
-      setStatusText('Google Vision API 연결 중...')
+      setProgress(15)
+      setStatusText('사진 분석 준비 중...')
 
       const compressed = await compressImage(file)
       const formData = new FormData()
       formData.append('image', compressed, 'scan.jpg')
 
-      setProgress(30)
-      setStatusText('텍스트 인식 중...')
+      setProgress(35)
+      setStatusText('약 이름 읽는 중...')
 
-      const res = await fetch('/api/ocr', {
-        method: 'POST',
-        body: formData,
-      })
-
+      const res = await fetch('/api/ocr', { method: 'POST', body: formData })
       setProgress(75)
 
       if (!res.ok) {
         if (res.status === 413) throw new Error('이미지 용량이 너무 큽니다. 더 작은 사진으로 다시 시도해 주세요.')
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `OCR 서버 오류 (${res.status})`)
+        throw new Error(err.error || `사진 인식 오류 (${res.status})`)
       }
 
       const data = await res.json()
-
-      setProgress(85)
-      setStatusText('개인정보 마스킹 중...')
+      setProgress(90)
+      setStatusText('개인정보 지우는 중...')
 
       const rawText: string = data.text || ''
       const maskedText = maskPII(rawText)
       const drugs = parseDrugs(maskedText)
 
       setProgress(100)
-      setStatusText(`완료! ${data.line_count ?? 0}줄 인식`)
+      setStatusText('완료!')
 
-      // imageDataUrl은 base64라 sessionStorage 용량(5MB) 초과 → 저장 제외
-      const session: ScanSession = {
-        rawText,
-        maskedText,
-        drugs,
-        scannedAt: new Date().toISOString(),
-      }
+      const session: ScanSession = { rawText, maskedText, drugs, scannedAt: new Date().toISOString() }
       sessionStorage.setItem('scanSession', JSON.stringify(session))
-
-      setTimeout(() => router.push('/drugs'), 600)
+      setTimeout(() => router.push('/drugs'), 500)
     } catch (err) {
       console.error(err)
-      const msg = err instanceof Error ? err.message : 'OCR 처리 중 오류가 발생했습니다.'
-      setError(msg)
+      setError(err instanceof Error ? err.message : '사진 처리 중 오류가 발생했습니다.')
       setStep('upload')
     }
   }, [router])
@@ -90,100 +75,62 @@ export default function ScanPage() {
     if (file) processImage(file)
   }
 
-  function handleSkip() {
-    const session: ScanSession = {
-      rawText: '',
-      maskedText: '',
-      drugs: [],
-      scannedAt: new Date().toISOString(),
-    }
-    sessionStorage.setItem('scanSession', JSON.stringify(session))
-    router.push('/drugs')
-  }
-
   return (
-    <div className="page-padding flex flex-col min-h-screen">
+    <div className="page-padding flex flex-col min-h-screen bg-gray-50">
       {/* 헤더 */}
       <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => router.back()}
-          className="w-9 h-9 rounded-xl bg-white shadow-sm flex items-center justify-center text-gray-600"
-        >
-          ←
+        <button onClick={() => router.back()} className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-600">
+          <Icon name="arrowLeft" size={22} />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-gray-900">약 봉투 스캔</h1>
-          <p className="text-xs text-gray-400">Step 1 / 4</p>
+          <h1 className="text-2xl font-bold text-gray-900">약 봉투 찍기</h1>
+          <p className="text-base text-gray-500 font-medium">1단계 / 4단계</p>
         </div>
       </div>
 
+      <div className="mb-7"><StepProgress step={1} /></div>
+
       {step === 'upload' && (
         <>
-          {/* 개인정보 보호 안내 */}
-          <div className="card p-4 mb-4 flex items-start gap-3">
-            <span className="text-2xl">🔒</span>
+          {/* 안심 안내 (초록) */}
+          <div className="flex items-start gap-3 rounded-2xl p-4 mb-5 bg-green-50">
+            <span className="text-green-600 flex-shrink-0 mt-0.5"><Icon name="lock" size={22} /></span>
             <div>
-              <p className="text-sm font-semibold text-gray-700">개인정보 보호 안내</p>
-              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                이미지는 Google Cloud Vision API로 처리됩니다. 이름·주민번호·병원명은
-                자동 삭제되며, 약물 정보만 AI 분석에 사용됩니다.
-              </p>
+              <p className="text-base font-bold text-green-800">안심하고 사용하세요</p>
+              <p className="text-sm text-green-700 mt-1 leading-relaxed">사진에서 약 이름만 읽어옵니다.<br />이름이나 주민번호는 사용하지 않습니다.</p>
             </div>
           </div>
 
-          {/* OCR 엔진 안내 */}
-          <div className="card p-3 mb-6 flex items-center gap-2 bg-indigo-50 border-indigo-100">
-            <span className="text-lg">🧠</span>
-            <p className="text-xs text-indigo-700">
-              <span className="font-semibold">Google Cloud Vision</span> — 고정밀 한국어 OCR
-            </p>
-          </div>
-
-          {/* 업로드 영역 */}
+          {/* 업로드 (대시) */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 border-2 border-dashed border-blue-200 rounded-2xl bg-blue-50
-                       flex flex-col items-center justify-center gap-4 p-8
-                       cursor-pointer active:bg-blue-100 transition-colors min-h-[240px]"
+            className="flex-1 border-2 border-dashed border-blue-300 rounded-3xl bg-blue-50 flex flex-col items-center justify-center gap-4 p-8 cursor-pointer active:bg-blue-100 transition-colors min-h-[260px]"
           >
-            <div className="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center">
-              <span className="text-4xl">📷</span>
+            <div className="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center text-blue-500">
+              <Icon name="camera" size={40} />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-blue-700">약 봉투 사진 선택</p>
-              <p className="text-xs text-blue-400 mt-1">카메라 촬영 또는 갤러리에서 선택</p>
+              <p className="text-xl font-bold text-blue-700">약 봉투 찍기</p>
+              <p className="text-base text-blue-500 mt-1">사진을 찍거나 선택하세요</p>
             </div>
           </div>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={handleFile}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />
 
           {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl space-y-2">
-              <p className="text-sm font-semibold text-red-600">⚠️ 오류 발생</p>
-              <p className="text-xs text-red-500 leading-relaxed">{error}</p>
-              {error.includes('API_KEY') && (
-                <div className="mt-2 p-3 bg-white rounded-xl border border-red-100">
-                  <p className="text-xs text-gray-500 font-medium mb-1">설정 방법:</p>
-                  <code className="text-xs text-gray-700 font-mono block">
-                    .env.local 파일에 아래 항목 추가:<br />
-                    GOOGLE_VISION_API_KEY=your_api_key
-                  </code>
-                </div>
-              )}
+            <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl">
+              <p className="text-sm text-red-600 leading-relaxed">⚠️ {error}</p>
             </div>
           )}
 
-          <div className="mt-4 space-y-3">
-            <p className="text-center text-xs text-gray-400">— 또는 —</p>
-            <button onClick={handleSkip} className="btn-secondary">
-              약품명 직접 입력하기
+          {/* 또는 + 직접 입력 (테두리형) */}
+          <div className="mt-5 space-y-3">
+            <p className="text-center text-base text-gray-400">— 또는 —</p>
+            <button
+              onClick={() => router.push('/manual')}
+              className="w-full py-4 bg-white border-2 border-blue-500 text-blue-600 font-bold text-lg rounded-2xl active:bg-blue-50 transition-colors"
+            >
+              약 이름 직접 입력
             </button>
           </div>
         </>
@@ -197,22 +144,15 @@ export default function ScanPage() {
               <img src={imageDataUrl} alt="약 봉투" className="w-full h-full object-cover" />
             </div>
           )}
-
           <div className="w-full space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">{statusText}</span>
-              <span className="text-blue-600 font-medium">{progress}%</span>
+            <div className="flex justify-between text-base">
+              <span className="text-gray-600 font-medium">{statusText}</span>
+              <span className="text-blue-600 font-bold">{progress}%</span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-2.5">
-              <div
-                className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              />
+            <div className="w-full bg-gray-100 rounded-full h-3">
+              <div className="bg-blue-600 h-3 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              <p className="text-xs text-gray-400">Google Vision OCR 처리 중...</p>
-            </div>
+            <p className="text-center text-sm text-gray-400 pt-1">잠시만 기다려 주세요…</p>
           </div>
         </div>
       )}

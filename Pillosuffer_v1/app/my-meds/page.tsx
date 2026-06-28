@@ -14,6 +14,7 @@ import {
   type MedGroup,
 } from '@/lib/storage'
 import type { DrugInfo } from '@/types'
+import Logo from '@/components/Logo'
 
 /** 촬영 날짜 → 상대/절대 표기 */
 function formatScanDate(iso: string): { relative: string; absolute: string } {
@@ -72,13 +73,13 @@ export default function MyMedsPage() {
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => router.push('/')}
-          className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-gray-600 text-lg"
+          className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-600 text-2xl"
         >
           ←
         </button>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-gray-900">내 약 관리</h1>
-          <p className="text-sm text-gray-400">
+          <h1 className="text-2xl font-bold text-gray-900">내 약 관리</h1>
+          <p className="text-base text-gray-500 font-medium">
             {groups.length > 0
               ? `저장된 약 ${totalCount}개 · ${groups.length}회 기록`
               : '저장된 약이 없어요'}
@@ -87,7 +88,7 @@ export default function MyMedsPage() {
         {groups.length > 0 && (
           <button
             onClick={handleClearAll}
-            className="px-3 py-1.5 text-xs text-red-500 bg-red-50 rounded-xl"
+            className="px-4 py-2 text-sm font-semibold text-red-500 bg-red-50 rounded-xl"
           >
             전체 삭제
           </button>
@@ -97,11 +98,11 @@ export default function MyMedsPage() {
       {/* 빈 상태 */}
       {groups.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center px-6 -mt-12">
-          <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-5">
-            <span className="text-5xl">💊</span>
+          <div className="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center mb-5">
+            <Logo size={56} />
           </div>
-          <p className="text-lg font-bold text-gray-700 text-center">저장된 약이 없어요</p>
-          <p className="text-sm text-gray-400 text-center mt-2 leading-relaxed">
+          <p className="text-xl font-bold text-gray-800 text-center">저장된 약이 없어요</p>
+          <p className="text-base text-gray-500 text-center mt-2 leading-relaxed">
             약 봉투를 촬영하면<br />
             촬영한 날짜와 함께 저장됩니다
           </p>
@@ -125,7 +126,7 @@ export default function MyMedsPage() {
                   <div className="flex items-center justify-between mb-2 px-1">
                     <div className="flex items-center gap-2 min-w-0">
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                        className={`text-sm px-2.5 py-1 rounded-full font-semibold flex-shrink-0 ${
                           group.source === 'scan'
                             ? 'bg-blue-100 text-blue-600'
                             : 'bg-amber-100 text-amber-600'
@@ -133,18 +134,18 @@ export default function MyMedsPage() {
                       >
                         {group.source === 'scan' ? '📷 촬영' : '✍️ 직접입력'}
                       </span>
-                      <span className="text-sm font-bold text-gray-700 truncate">
+                      <span className="text-base font-bold text-gray-800 truncate">
                         {relative ? relative : absolute}
                       </span>
                       {relative && (
-                        <span className="text-xs text-gray-400 flex-shrink-0">{absolute}</span>
+                        <span className="text-sm text-gray-400 flex-shrink-0">{absolute}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-xs text-gray-400">{group.drugs.length}개</span>
+                      <span className="text-sm text-gray-500">{group.drugs.length}개</span>
                       <button
                         onClick={() => handleDeleteGroup(group.id, dateLabel)}
-                        className="text-xs text-red-400 px-2 py-0.5 rounded-lg bg-red-50 active:bg-red-100"
+                        className="text-sm text-red-400 px-2.5 py-1 rounded-lg bg-red-50 active:bg-red-100 font-medium"
                       >
                         묶음 삭제
                       </button>
@@ -169,12 +170,20 @@ export default function MyMedsPage() {
           </div>
 
           {/* 약 추가 버튼 */}
-          <Link
-            href="/scan"
-            className="block w-full py-4 mt-2 bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl text-blue-600 font-semibold text-center active:bg-blue-100"
-          >
-            + 약 봉투 추가 촬영
-          </Link>
+          <div className="space-y-3 mt-2">
+            <Link
+              href="/scan"
+              className="block w-full py-4 bg-blue-600 text-white rounded-2xl text-lg font-bold text-center active:bg-blue-700 transition-colors"
+            >
+              약 봉투 추가로 찍기
+            </Link>
+            <Link
+              href="/manual"
+              className="block w-full py-4 bg-white border-2 border-blue-500 text-blue-600 rounded-2xl text-lg font-bold text-center active:bg-blue-50 transition-colors"
+            >
+              약 이름 직접 추가하기
+            </Link>
+          </div>
         </>
       )}
 

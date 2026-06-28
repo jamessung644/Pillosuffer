@@ -14,6 +14,8 @@
  * 미승인/오류 시 자동 비활성(회로차단)되어 절대 가짜 데이터를 만들지 않고 null 반환.
  */
 
+import type { DrugInfo, DrugProfile } from '@/types'
+
 const PRMSN_URL =
   'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService07/getDrugPrdtPrmsnInq07'
 
@@ -172,4 +174,19 @@ export async function resolveIngredient(drugName: string): Promise<ResolvedIngre
 
   cache.set(drugName, null)
   return null
+}
+
+/** 여러 약품의 공식 성분·분류 프로필 일괄 해석 (LLM 식별 컨텍스트용) */
+export async function resolveDrugProfiles(drugs: DrugInfo[]): Promise<DrugProfile[]> {
+  return Promise.all(
+    drugs.map(async (d): Promise<DrugProfile> => {
+      const r = await resolveIngredient(d.name)
+      return {
+        name: d.name,
+        ingredientKor: r?.kor ?? null,
+        ingredientEng: r?.eng ?? [],
+        productType: r?.productType ?? null,
+      }
+    })
+  )
 }

@@ -52,7 +52,7 @@ export default function ProfilePage() {
       <div className="flex items-center gap-3 mb-6 pt-2">
         <button
           onClick={() => router.push('/')}
-          className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 active:bg-gray-200"
+          className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-2xl active:bg-gray-200"
         >
           ←
         </button>
@@ -72,13 +72,13 @@ export default function ProfilePage() {
             </svg>
           )}
         </div>
-        <p className="text-base font-semibold text-gray-700">{displayName}</p>
+        <p className="text-xl font-bold text-gray-800">{displayName}</p>
         {userEmail ? (
-          <p className="text-xs text-gray-400 mt-0.5">{userEmail}</p>
+          <p className="text-sm text-gray-400 mt-1">{userEmail}</p>
         ) : (
-          <p className="text-xs text-gray-400 mt-0.5">로그인 안 됨</p>
+          <p className="text-sm text-gray-400 mt-1">로그인 안 됨</p>
         )}
-        <p className="text-xs text-gray-400 mt-1">저장된 약 {savedCount}개</p>
+        <p className="text-sm text-gray-500 mt-1 font-medium">저장된 약 {savedCount}개</p>
       </div>
 
       {/* 로그인/로그아웃 카드 */}
@@ -168,7 +168,7 @@ export default function ProfilePage() {
         </Field>
       </div>
 
-      <p className="text-xs text-gray-400 leading-relaxed mb-6">
+      <p className="text-sm text-gray-500 leading-relaxed mb-6">
         🔒 입력하신 정보는 이 기기에만 저장되며 외부로 전송되지 않습니다.
       </p>
 
@@ -177,7 +177,7 @@ export default function ProfilePage() {
         <button
           onClick={handleSave}
           disabled={showSuccess}
-          className="w-full py-4 bg-gray-900 text-white text-base font-semibold rounded-2xl active:bg-gray-700 transition-colors disabled:opacity-50"
+          className="w-full py-5 bg-gray-900 text-white text-lg font-bold rounded-2xl active:bg-gray-700 transition-colors disabled:opacity-50"
         >
           저장
         </button>
@@ -188,11 +188,11 @@ export default function ProfilePage() {
       <style jsx global>{`
         .profile-input {
           width: 100%;
-          padding: 0.75rem 1rem;
+          padding: 0.9rem 1rem;
           background: rgb(249 250 251);
           border: 1px solid rgb(243 244 246);
           border-radius: 0.875rem;
-          font-size: 0.95rem;
+          font-size: 1.0625rem;
           color: rgb(17 24 39);
           outline: none;
           transition: border-color 0.15s, background 0.15s;
@@ -212,9 +212,9 @@ export default function ProfilePage() {
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+      <label className="block text-base font-semibold text-gray-700 mb-1.5">{label}</label>
       {children}
-      {hint && <p className="text-xs text-gray-400 mt-1.5">{hint}</p>}
+      {hint && <p className="text-sm text-gray-400 mt-1.5">{hint}</p>}
     </div>
   )
 }

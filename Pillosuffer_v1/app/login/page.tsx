@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import Logo from '@/components/Logo'
 
 function LoginContent() {
   const router = useRouter()
@@ -44,11 +45,11 @@ function LoginContent() {
 
       {/* 로고 + 안내 */}
       <div className="flex-1 flex flex-col items-center justify-center -mt-12">
-        <div className="w-20 h-20 rounded-3xl bg-gray-900 flex items-center justify-center mb-5">
-          <span className="text-4xl">💊</span>
+        <div className="w-24 h-24 rounded-3xl bg-blue-50 flex items-center justify-center mb-5">
+          <Logo size={60} />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">PilloSuffer</h1>
-        <p className="text-base text-gray-500 mt-2 text-center leading-relaxed">
+        <h1 className="text-5xl font-black tracking-tight text-gray-900">뭐무꼬</h1>
+        <p className="text-lg text-gray-500 mt-3 text-center leading-relaxed">
           간편하게 로그인하고<br />
           내 약 정보를 안전하게 관리하세요
         </p>
@@ -59,7 +60,7 @@ function LoginContent() {
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full py-4 bg-white border border-gray-200 text-gray-800 text-base font-semibold rounded-2xl active:bg-gray-50 transition-colors disabled:opacity-60 flex items-center justify-center gap-3 shadow-sm"
+          className="w-full py-5 bg-white border border-gray-200 text-gray-800 text-lg font-bold rounded-2xl active:bg-gray-50 transition-colors disabled:opacity-60 flex items-center justify-center gap-3 shadow-sm"
         >
           {loading ? (
             <span>이동 중...</span>
@@ -75,14 +76,14 @@ function LoginContent() {
           <p className="text-center text-sm text-red-500">{error}</p>
         )}
 
-        <p className="text-center text-xs text-gray-400 pt-3 leading-relaxed">
+        <p className="text-center text-sm text-gray-400 pt-3 leading-relaxed">
           로그인하면 약 정보가 기기 사이에서 동기화됩니다.<br />
           로그인 없이도 서비스 이용이 가능합니다.
         </p>
 
         <button
           onClick={() => router.push('/')}
-          className="w-full py-3 text-sm text-gray-500 font-medium active:text-gray-700"
+          className="w-full py-4 text-base text-gray-500 font-semibold active:text-gray-700"
         >
           로그인 없이 둘러보기
         </button>

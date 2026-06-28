@@ -3,7 +3,7 @@
  * Provider: Gemini (gemini-3.1-flash-lite)
  * — 파일명은 호환을 위해 유지 (import 경로 변경 불필요)
  */
-import type { DrugInfo, SafetyResult, SafetyDetail, MfdsContraindication, EdrugInfo } from '@/types'
+import type { DrugInfo, SafetyResult, SafetyDetail, MfdsContraindication, EdrugInfo, DrugProfile } from '@/types'
 
 /** HTML 태그 제거 — e약은요 API 응답에 <p><br> 등이 포함될 수 있음 */
 function stripTags(html: string): string {
@@ -40,7 +40,8 @@ export async function checkSafety(
   drugs: DrugInfo[],
   foods: string[],
   mfdsContext: MfdsContraindication[],
-  edrugInfo: EdrugInfo[] = []
+  edrugInfo: EdrugInfo[] = [],
+  drugProfiles: DrugProfile[] = []
 ): Promise<SafetyResult> {
   const apiKey = process.env.GEMINI_API_KEY
 
@@ -65,6 +66,14 @@ export async function checkSafety(
         return lines.join('\n')
       }).join('\n\n')
     : '※ e약은요 API에서 해당 약품 정보 없음'
+
+  const hasProfiles = drugProfiles.some(p => p.ingredientEng.length || p.ingredientKor || p.productType)
+  const profileText = hasProfiles
+    ? drugProfiles.map(p => {
+        const ing = [p.ingredientEng.join(', '), p.ingredientKor].filter(Boolean).join(' / ')
+        return `- ${p.name} → 성분: ${ing || '미상'}${p.productType ? ` · 분류: ${p.productType}` : ''}`
+      }).join('\n')
+    : '※ 공식 성분 식별 정보 없음'
 
   const prompt = `당신은 DrugBank 6.0 및 식약처 DB 기반의 복약 안전성 전문 AI입니다.
 실제 임상적 위험도를 정확하고 균형있게 안내하세요. 사소한 가능성만으로 과잉 경고하지 마세요.
@@ -114,6 +123,9 @@ export async function checkSafety(
 [복용 중인 약품]
 ${drugs.map(d => `- ${d.name}${d.dose ? ` (${d.dose})` : ''}${d.frequency ? ` / ${d.frequency}` : ''}`).join('\n')}
 
+[약품 식별 정보] ★ 식약처 제품허가 공식 데이터 — 각 약품의 정확한 성분·분류
+${profileText}
+
 [확인하려는 음식/영양제]
 ${foods.map(f => `- ${f}`).join('\n')}
 
@@ -126,11 +138,11 @@ ${mfdsText}
 
 ※ 데이터 우선순위: 식약처 e약은요 > DrugBank 6.0 > AI 일반 지식. e약은요 데이터가 있으면 반드시 최우선으로 참고.
 
-🚫 환각 방지 — 가장 중요한 규칙:
-- 위 [식약처 e약은요]와 [DrugBank 6.0] 섹션에 해당 약품의 실제 데이터가 없으면, 그 약품의 성분·분류·약리작용을 추측하거나 지어내지 마세요.
-- "이 약은 ~성분으로 추정됩니다", "~계열 약물입니다" 등 데이터 없이 약품을 분류하는 것은 절대 금지.
-- DB에 매칭 데이터가 없는 약품은 reason에 "데이터베이스에서 해당 약품의 상호작용 정보를 찾지 못했습니다. 정확한 확인을 위해 약사·의사 상담을 권합니다."로 작성.
-- 잘 모르는 약품에 대해 다른 약품의 정보를 가져다 쓰지 마세요. 없으면 없다고 솔직하게 말하세요.
+🚫 환각 방지 & 정확도 — 가장 중요한 규칙:
+- 약품의 성분·분류는 위 [약품 식별 정보](식약처 공식)를 신뢰해 사용하세요. 식별 정보가 있으면 그 성분을 기준으로 음식과의 상호작용을 판단합니다.
+- 단, 구체적 상호작용·금기·수치는 [식약처 e약은요]·[DrugBank 6.0] 데이터 또는 널리 알려진 임상 합의 범위에서만 단정하세요. 데이터에 없는 내용을 지어내지 마세요.
+- [약품 식별 정보]·[e약은요]·[DrugBank 6.0] 어디에도 근거가 없으면 약품을 추측·분류하지 말고, reason에 "데이터베이스에서 해당 약품 정보를 찾지 못했습니다. 정확한 확인을 위해 약사·의사 상담을 권합니다."로 작성.
+- 다른 약품의 정보를 가져다 쓰지 마세요.
 
 ⚠️ 출처(source) 필드 작성 규칙 — 반드시 준수:
 ${(hasDbContext || hasEdrugContext)
@@ -172,7 +184,8 @@ ${(hasDbContext || hasEdrugContext)
     ],
     generationConfig: {
       responseMimeType: 'application/json',
-      temperature: 0.3,
+      temperature: 0,
+      topP: 1,
       maxOutputTokens: 2048,
     },
   }

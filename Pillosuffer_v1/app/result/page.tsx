@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import SafetyBadge, { VERDICT_CONFIG } from '@/components/SafetyBadge'
 import SourceCitation from '@/components/SourceCitation'
-import BottomNav from '@/components/BottomNav'
+import StepProgress from '@/components/StepProgress'
 import { useAuth } from '@/components/AuthProvider'
 import type { DrugInfo, SafetyResult, SafetyDetail, HistoryEntry, SafetyVerdict } from '@/types'
 
@@ -44,7 +44,15 @@ export default function ResultPage() {
       let drugs: DrugInfo[] = []
       let sessionNames: string[] = []
 
-      if (sessionDrugsRaw) {
+      // 음식 페이지에서 직접 선택한 약이 있으면 그 약만 분석
+      const selectedRaw = sessionStorage.getItem('selectedDrugs')
+      const selected: DrugInfo[] = selectedRaw ? JSON.parse(selectedRaw) : []
+
+      if (selected.length) {
+        drugs = selected
+        sessionNames = selected.map(d => d.name)
+        setHasBothSources(false)
+      } else if (sessionDrugsRaw) {
         const sessionDrugs: DrugInfo[] = JSON.parse(sessionDrugsRaw)
         sessionNames = sessionDrugs.map(d => d.name)
         if (savedDrugsRaw) {
@@ -93,6 +101,7 @@ export default function ResultPage() {
           foods,
           mfdsContext: mfdsData.contraindications || [],
           edrugInfo: mfdsData.edrugInfo || [],
+          drugProfiles: mfdsData.drugProfiles || [],
         }),
       })
       const safetyData: SafetyResult = await safetyRes.json()
@@ -163,14 +172,14 @@ export default function ResultPage() {
           <div className="absolute inset-0 flex items-center justify-center text-2xl">🔍</div>
         </div>
         <div className="text-center">
-          <p className="font-semibold text-gray-800">AI 안전 확인 중...</p>
-          <p className="text-sm text-gray-400 mt-1">DrugBank DB를 기반으로 분석하고 있습니다</p>
+          <p className="text-xl font-bold text-gray-800">AI 안전 확인 중...</p>
+          <p className="text-base text-gray-500 mt-1">DrugBank DB를 기반으로 분석하고 있습니다</p>
         </div>
         <div className="w-full space-y-2">
           {['DrugBank DB 검색 중...', 'AI 분석 중...', '결과 생성 중...'].map((text, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
-              <p className="text-xs text-gray-400">{text}</p>
+              <p className="text-sm text-gray-400">{text}</p>
             </div>
           ))}
         </div>
@@ -197,13 +206,15 @@ export default function ResultPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">검사 결과</h1>
-          <p className="text-xs text-gray-400">Step 4 / 4</p>
+          <h1 className="text-2xl font-bold text-gray-900">검사 결과</h1>
+          <p className="text-base text-gray-500 font-medium">4단계 / 4단계</p>
         </div>
-        <span className="text-xs text-gray-300 px-2 py-1 bg-gray-100 rounded-lg">
+        <span className="text-sm text-gray-400 px-3 py-1.5 bg-gray-100 rounded-lg">
           🤖 AI 참고 정보
         </span>
       </div>
+
+      <div className="mb-6"><StepProgress step={4} /></div>
 
       {/* 탭 */}
       <div className="flex bg-gray-100 rounded-2xl p-1 mb-6">
@@ -211,8 +222,8 @@ export default function ResultPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-              tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'
+            className={`flex-1 py-3.5 rounded-xl text-lg font-bold transition-colors ${
+              tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
             }`}
           >
             {t === 'result' ? '📋 이번 결과' : '🕐 이전 기록'}
@@ -274,7 +285,7 @@ export default function ResultPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setDrugFilter('session')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors border ${
                     drugFilter === 'session'
                       ? 'bg-blue-50 border-blue-200 text-blue-700'
                       : 'bg-gray-50 border-gray-200 text-gray-500'
@@ -284,7 +295,7 @@ export default function ResultPage() {
                 </button>
                 <button
                   onClick={() => setDrugFilter('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors border ${
                     drugFilter === 'all'
                       ? 'bg-blue-50 border-blue-200 text-blue-700'
                       : 'bg-gray-50 border-gray-200 text-gray-500'
@@ -295,7 +306,7 @@ export default function ResultPage() {
                 <span className="text-[10px] text-gray-400 ml-auto">{filteredDetails.length}건</span>
               </div>
             )}
-            <p className="text-sm font-semibold text-gray-700">항목별 안내</p>
+            <p className="text-lg font-bold text-gray-800">항목별 안내</p>
             {filteredDetails.map((detail: SafetyDetail, i: number) => {
               const v = (['safe','caution','danger'] as const).includes(detail.verdict as 'safe' | 'caution' | 'danger') ? detail.verdict : 'caution'
               const cfg = VERDICT_CONFIG[v]
@@ -310,22 +321,22 @@ export default function ResultPage() {
                   <div className="p-4 pl-5">
                     {/* 상단: 아이콘 + 약품/음식 + 배지 */}
                     <div className="flex items-start gap-3 mb-3">
-                      <div className={`w-10 h-10 rounded-xl ${cfg.iconBg} flex items-center justify-center flex-shrink-0`}>
-                        <span className={`${cfg.iconText} text-lg font-bold`}>{cfg.icon}</span>
+                      <div className={`w-12 h-12 rounded-xl ${cfg.iconBg} flex items-center justify-center flex-shrink-0`}>
+                        <span className={`${cfg.iconText} text-2xl font-bold`}>{cfg.icon}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-gray-500 font-medium">{detail.drug}</p>
-                        <p className={`font-bold text-sm ${cfg.textStrong}`}>× {detail.food}</p>
+                        <p className="text-sm text-gray-500 font-medium">{detail.drug}</p>
+                        <p className={`font-bold text-lg ${cfg.textStrong}`}>× {detail.food}</p>
                       </div>
                       <SafetyBadge verdict={detail.verdict} size="sm" />
                     </div>
 
                     {/* 본문 — 좌측 들여쓰기로 아이콘과 정렬 */}
-                    <p className="text-xs text-gray-700 leading-relaxed pl-[52px] -mt-2">
+                    <p className="text-base text-gray-700 leading-relaxed pl-[60px] -mt-2">
                       {detail.reason}
                     </p>
 
-                    <div className="pl-[52px] mt-2">
+                    <div className="pl-[60px] mt-2">
                       <SourceCitation source={detail.source} />
                     </div>
                   </div>
@@ -337,11 +348,11 @@ export default function ResultPage() {
           {/* 주의 항목 발견 시 CTA */}
           {filteredVerdict === 'danger' && (
             <div className="card p-4 bg-red-50 border-red-200">
-              <p className="text-sm font-semibold text-red-700 mb-2">⚠️ 위험 조합 감지됨</p>
-              <p className="text-xs text-red-600 mb-3">반드시 약사 또는 의사에게 확인하세요.</p>
+              <p className="text-lg font-bold text-red-700 mb-2">⚠️ 위험 조합 감지됨</p>
+              <p className="text-base text-red-600 mb-3">반드시 약사 또는 의사에게 확인하세요.</p>
               <a
                 href="tel:1399"
-                className="block w-full py-3 bg-red-600 text-white text-center rounded-xl text-sm font-medium"
+                className="block w-full py-4 bg-red-600 text-white text-center rounded-xl text-lg font-bold"
               >
                 📞 약사 상담 전화 (1399)
               </a>
@@ -350,8 +361,8 @@ export default function ResultPage() {
 
           {/* 면책 조항 */}
           <div className="card p-4 bg-gray-50 border-gray-100">
-            <p className="text-xs text-gray-400 leading-relaxed">{result.disclaimer}</p>
-            <p className="text-xs text-gray-300 mt-2">🤖 LLM AI · DrugBank 6.0 · 식품의약품안전처 DB 활용</p>
+            <p className="text-sm text-gray-500 leading-relaxed">{result.disclaimer}</p>
+            <p className="text-sm text-gray-400 mt-2">🤖 LLM AI · DrugBank 6.0 · 식품의약품안전처 DB 활용</p>
           </div>
 
           {/* 다시 검사 */}
@@ -394,7 +405,6 @@ export default function ResultPage() {
         </div>
       )}
 
-      <BottomNav />
     </div>
   )
 }

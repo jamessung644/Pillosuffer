@@ -3,8 +3,11 @@ import './globals.css'
 import { AuthProvider } from '@/components/AuthProvider'
 
 export const metadata: Metadata = {
-  title: 'PilloSuffer — 복약 안전 검증',
+  title: '뭐무꼬 — 복약 안전 검증',
   description: '약 봉투 사진으로 음식·영양제 복약 안전 여부를 AI가 검증합니다.',
+  icons: {
+    icon: '/logo.svg',
+  },
 }
 
 export const viewport: Viewport = {

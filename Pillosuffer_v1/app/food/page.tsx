@@ -2,9 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import BottomNav from '@/components/BottomNav'
+import Icon from '@/components/Icon'
+import StepProgress from '@/components/StepProgress'
 import { useAuth } from '@/components/AuthProvider'
 import { compressImage } from '@/lib/image'
+import { getSavedDrugs } from '@/lib/storage'
+import type { DrugInfo } from '@/types'
 
 const COMMON_FOODS = [
   '자몽', '우유', '알코올', '녹차', '커피',
@@ -36,12 +39,21 @@ export default function FoodPage() {
   const [suggestions, setSuggestions] = useState<FoodResult[]>([])
   const [searching, setSearching] = useState(false)
   const [hasDrugs, setHasDrugs] = useState(true)
+  const [savedDrugs, setSavedDrugs] = useState<DrugInfo[]>([])
+  const [selectedDrugs, setSelectedDrugs] = useState<string[]>([])
 
   useEffect(() => {
-    const hasSession = !!sessionStorage.getItem('drugList')
-    const hasSaved = !!localStorage.getItem('savedMedications')
-    setHasDrugs(hasSession || hasSaved)
+    const saved = getSavedDrugs()
+    setSavedDrugs(saved)
+    setSelectedDrugs(saved.map(d => d.name))   // 기본: 전체 선택
+    setHasDrugs(saved.length > 0)
   }, [])
+
+  function toggleDrug(name: string) {
+    setSelectedDrugs(prev =>
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    )
+  }
 
   function addFood(name: string) {
     const trimmed = name.trim()
@@ -117,8 +129,18 @@ export default function FoodPage() {
 
   function proceed() {
     if (!foods.length) return
+    const chosen = savedDrugs.filter(d => selectedDrugs.includes(d.name))
+    if (savedDrugs.length > 0 && chosen.length === 0) {
+      alert('상호작용을 확인할 약을 1개 이상 선택해 주세요.')
+      return
+    }
     // 입력은 미리 저장 (로그인 왕복 후에도 유지) → 검증 결과는 로그인 필요
     sessionStorage.setItem('foodList', JSON.stringify(foods))
+    if (chosen.length > 0) {
+      sessionStorage.setItem('selectedDrugs', JSON.stringify(chosen))
+    } else {
+      sessionStorage.removeItem('selectedDrugs')
+    }
     if (!user) {
       router.push(`/login?next=${encodeURIComponent('/result')}`)
       return
@@ -129,12 +151,16 @@ export default function FoodPage() {
   return (
     <div className="page-padding flex flex-col min-h-screen">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => router.back()} className="w-9 h-9 rounded-xl bg-white shadow-sm flex items-center justify-center text-gray-600">←</button>
+        <button onClick={() => router.back()} className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-600">
+          <Icon name="arrowLeft" size={22} />
+        </button>
         <div>
-          <h1 className="text-lg font-bold text-gray-900">음식·영양제 입력</h1>
-          <p className="text-xs text-gray-400">Step 3 / 4</p>
+          <h1 className="text-2xl font-bold text-gray-900">음식 입력</h1>
+          <p className="text-base text-gray-500 font-medium">3단계 / 4단계</p>
         </div>
       </div>
+
+      <div className="mb-7"><StepProgress step={3} /></div>
 
       {/* 약 데이터 없을 때 안내 배너 */}
       {!hasDrugs && (
@@ -153,13 +179,41 @@ export default function FoodPage() {
         </div>
       )}
 
+      {/* 확인할 내 약 선택 */}
+      {savedDrugs.length > 0 && (
+        <div className="mb-6">
+          <p className="text-base font-bold text-gray-800 mb-1">
+            확인할 내 약 <span className="text-gray-400 font-medium">· 탭하여 선택</span>
+          </p>
+          <p className="text-sm text-gray-500 mb-2.5">
+            선택한 약만 음식과 비교합니다 ({selectedDrugs.length}/{savedDrugs.length})
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {savedDrugs.map(d => {
+              const on = selectedDrugs.includes(d.name)
+              return (
+                <button
+                  key={d.name}
+                  onClick={() => toggleDrug(d.name)}
+                  className={`px-4 py-2.5 rounded-full text-base font-semibold border-2 transition-colors ${
+                    on ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-200'
+                  }`}
+                >
+                  {on ? '✓ ' : ''}{d.name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="flex bg-gray-100 rounded-2xl p-1 mb-6">
         {(['text', 'photo'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-              tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'
+            className={`flex-1 py-3.5 rounded-xl text-lg font-bold transition-colors ${
+              tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
             }`}
           >
             {t === 'text' ? '✏️ 텍스트 입력' : '📷 사진 인식'}
@@ -173,7 +227,7 @@ export default function FoodPage() {
           <div ref={searchRef} className="relative">
             <div className="flex gap-2">
               <input
-                className="flex-1 px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-4 border border-gray-200 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="식품명 검색 또는 직접 입력"
                 value={inputText}
                 onChange={e => handleInputChange(e.target.value)}
@@ -184,7 +238,7 @@ export default function FoodPage() {
               />
               <button
                 onClick={() => addFood(inputText)}
-                className="px-4 py-3 bg-blue-600 text-white rounded-2xl text-sm font-medium"
+                className="px-5 py-4 bg-blue-600 text-white rounded-2xl text-lg font-bold"
               >
                 추가
               </button>
@@ -231,14 +285,14 @@ export default function FoodPage() {
           </div>
 
           <div>
-            <p className="text-xs text-gray-400 mb-2">자주 확인하는 항목</p>
+            <p className="text-sm text-gray-500 mb-2 font-medium">자주 확인하는 항목</p>
             <div className="flex flex-wrap gap-2">
               {COMMON_FOODS.map(food => (
                 <button
                   key={food}
                   onClick={() => addFood(food)}
                   disabled={foods.includes(food)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  className={`px-4 py-2.5 rounded-full text-base font-semibold border transition-colors ${
                     foods.includes(food)
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'bg-white text-gray-600 border-gray-200 active:bg-gray-50'
@@ -280,12 +334,12 @@ export default function FoodPage() {
 
       {foods.length > 0 && (
         <div className="mb-6">
-          <p className="text-xs text-gray-500 font-medium mb-2">선택된 항목 ({foods.length})</p>
+          <p className="text-sm text-gray-500 font-semibold mb-2">선택된 항목 ({foods.length})</p>
           <div className="flex flex-wrap gap-2">
             {foods.map(food => (
-              <span key={food} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-full text-sm">
+              <span key={food} className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-full text-base font-medium">
                 {food}
-                <button onClick={() => removeFood(food)} className="text-blue-200 hover:text-white ml-0.5">×</button>
+                <button onClick={() => removeFood(food)} className="text-blue-200 hover:text-white ml-0.5 text-xl leading-none">×</button>
               </span>
             ))}
           </div>
@@ -301,7 +355,6 @@ export default function FoodPage() {
         )}
       </div>
 
-      <BottomNav />
     </div>
   )
 }

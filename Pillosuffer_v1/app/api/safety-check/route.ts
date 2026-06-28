@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkSafety } from '@/lib/safety-llm'
-import type { DrugInfo, MfdsContraindication, EdrugInfo } from '@/types'
+import type { DrugInfo, MfdsContraindication, EdrugInfo, DrugProfile } from '@/types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,12 +9,13 @@ export async function POST(request: NextRequest) {
     const foods: string[] = body.foods || []
     const mfdsContext: MfdsContraindication[] = body.mfdsContext || []
     const edrugInfo: EdrugInfo[] = body.edrugInfo || []
+    const drugProfiles: DrugProfile[] = body.drugProfiles || []
 
     if (!drugs.length || !foods.length) {
       return NextResponse.json({ error: '약품과 음식 정보가 필요합니다.' }, { status: 400 })
     }
 
-    const result = await checkSafety(drugs, foods, mfdsContext, edrugInfo)
+    const result = await checkSafety(drugs, foods, mfdsContext, edrugInfo, drugProfiles)
     return NextResponse.json(result)
   } catch (error) {
     console.error('[API/safety-check]', error)
