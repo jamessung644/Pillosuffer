@@ -2,7 +2,14 @@
 .env
 .vercel
 .next
+.next-ios
 node_modules
+
+# Capacitor / iOS — ios/ 자체는 커밋하고 빌드 산출물만 제외한다
+ios/App/Pods
+ios/App/App/public
+ios/DerivedData*
+*.xcuserdatad
 tsconfig.tsbuildinfo
 .DS_Store
 npm-debug.log*
