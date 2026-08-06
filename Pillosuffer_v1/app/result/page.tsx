@@ -6,7 +6,9 @@ import Link from 'next/link'
 import SafetyBadge, { VERDICT_CONFIG } from '@/components/SafetyBadge'
 import SourceCitation from '@/components/SourceCitation'
 import StepProgress from '@/components/StepProgress'
+import Icon from '@/components/Icon'
 import { useAuth } from '@/components/AuthProvider'
+import { apiUrl } from '@/lib/api'
 import type { DrugInfo, SafetyResult, SafetyDetail, HistoryEntry, SafetyVerdict } from '@/types'
 
 export default function ResultPage() {
@@ -77,7 +79,7 @@ export default function ResultPage() {
       }
 
       // 1. DrugBank DB 검색 (약품 + 음식 조합으로 상호작용 조회)
-      const mfdsRes = await fetch('/api/mfds', {
+      const mfdsRes = await fetch(apiUrl('/api/mfds'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ drugs, foods }),
@@ -93,7 +95,7 @@ export default function ResultPage() {
       })
 
       // 2. AI 안전 확인
-      const safetyRes = await fetch('/api/safety-check', {
+      const safetyRes = await fetch(apiUrl('/api/safety-check'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -204,12 +206,15 @@ export default function ResultPage() {
   return (
     <div className="page-padding flex flex-col min-h-screen">
       {/* 헤더 */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => router.back()} className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-600 flex-shrink-0">
+          <Icon name="arrowLeft" size={22} />
+        </button>
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-gray-900">검사 결과</h1>
           <p className="text-base text-gray-500 font-medium">4단계 / 4단계</p>
         </div>
-        <span className="text-sm text-gray-400 px-3 py-1.5 bg-gray-100 rounded-lg">
+        <span className="text-sm text-gray-400 px-3 py-1.5 bg-gray-100 rounded-lg flex-shrink-0">
           🤖 AI 참고 정보
         </span>
       </div>

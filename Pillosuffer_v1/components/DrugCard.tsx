@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Icon from '@/components/Icon'
+import { apiUrl } from '@/lib/api'
 import type { DrugInfo } from '@/types'
 import type { EasyDrugInfo } from '@/lib/easyDrug'
 import type { ResolvedIngredient } from '@/lib/ingredient'
@@ -27,7 +28,7 @@ export default function DrugCard({ drug, index, onUpdate, onDelete }: Props) {
     if (info || permit || infoState === 'loading') return
     setInfoState('loading')
     try {
-      const res = await fetch(`/api/easy-drug?name=${encodeURIComponent(drug.name)}`)
+      const res = await fetch(apiUrl(`/api/easy-drug?name=${encodeURIComponent(drug.name)}`))
       const data = await res.json()
       if (data.found) {
         if (data.info) setInfo(data.info)

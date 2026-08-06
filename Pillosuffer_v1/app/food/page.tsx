@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Icon from '@/components/Icon'
 import StepProgress from '@/components/StepProgress'
 import { useAuth } from '@/components/AuthProvider'
+import { apiUrl } from '@/lib/api'
+import { searchFoods as searchFoodDb } from '@/lib/foodSearch'
 import { compressImage } from '@/lib/image'
 import { getSavedDrugs } from '@/lib/storage'
 import type { DrugInfo } from '@/types'
@@ -71,9 +73,7 @@ export default function FoodPage() {
     if (query.length < 1) { setSuggestions([]); return }
     setSearching(true)
     try {
-      const res = await fetch(`/api/food-search?q=${encodeURIComponent(query)}`)
-      const data = await res.json()
-      setSuggestions(data.results ?? [])
+      setSuggestions(await searchFoodDb(query))
     } catch {
       setSuggestions([])
     } finally {
@@ -106,7 +106,7 @@ export default function FoodPage() {
       const compressed = await compressImage(file)
       const formData = new FormData()
       formData.append('image', compressed, 'food.jpg')
-      const res = await fetch('/api/food-recognize', { method: 'POST', body: formData })
+      const res = await fetch(apiUrl('/api/food-recognize'), { method: 'POST', body: formData })
       const data = await res.json()
       if (data.items?.length) {
         setFoods(prev => {
@@ -327,7 +327,8 @@ export default function FoodPage() {
               </>
             )}
           </div>
-          <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
+          {/* scan 화면과 같은 이유로 capture 를 뺀다 — 촬영/보관함 선택 둘 다 허용. */}
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
           {error && <p className="mt-3 text-xs text-red-500 text-center">{error}</p>}
         </div>
       )}
