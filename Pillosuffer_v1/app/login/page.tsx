@@ -1,31 +1,39 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
+import { signInWithGoogle, toUserMessage } from '@/lib/auth'
+import { useAuth } from '@/components/AuthProvider'
 import Logo from '@/components/Logo'
 
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') ?? '/'
+  const { user, authError } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // 앱에서는 딥링크로 돌아와 AuthProvider 가 세션을 만든다. 페이지 이동은 여기서 한다.
+  // (웹은 /auth/callback 라우트가 서버에서 리다이렉트하므로 해당 없음)
+  useEffect(() => {
+    if (user) router.replace(next)
+  }, [user, next, router])
+
+  useEffect(() => {
+    if (authError) {
+      setError(authError)
+      setLoading(false)
+    }
+  }, [authError])
 
   async function handleGoogleLogin() {
     setLoading(true)
     setError(null)
-    const supabase = createClient()
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    })
-
-    if (error) {
-      setError(error.message)
+    try {
+      await signInWithGoogle(next)
+    } catch (err) {
+      setError(toUserMessage(err))
       setLoading(false)
     }
   }
