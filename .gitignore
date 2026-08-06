@@ -45,3 +45,6 @@ sql data/
 *.db
 *.sql
 
+
+# 스키마 마이그레이션은 코드다 — 위 *.sql 규칙(DB 덤프용)에서 제외한다.
+!**/supabase/*.sql
