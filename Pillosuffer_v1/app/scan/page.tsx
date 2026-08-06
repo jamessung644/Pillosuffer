@@ -4,6 +4,7 @@ import { useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { maskPII, parseDrugs } from '@/lib/masking'
 import { compressImage } from '@/lib/image'
+import { recognizeDrugLabel } from '@/lib/ocr'
 import Icon from '@/components/Icon'
 import StepProgress from '@/components/StepProgress'
 import type { ScanSession } from '@/types'
@@ -34,28 +35,20 @@ export default function ScanPage() {
       setStatusText('사진 분석 준비 중...')
 
       const compressed = await compressImage(file)
-      const formData = new FormData()
-      formData.append('image', compressed, 'scan.jpg')
 
       setProgress(35)
       setStatusText('약 이름 읽는 중...')
 
-      const res = await fetch('/api/ocr', { method: 'POST', body: formData })
-      setProgress(75)
-
-      if (!res.ok) {
-        if (res.status === 413) throw new Error('이미지 용량이 너무 큽니다. 더 작은 사진으로 다시 시도해 주세요.')
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `사진 인식 오류 (${res.status})`)
-      }
-
-      const data = await res.json()
+      // 앱에서는 온디바이스 Vision, 웹에서는 /api/ocr 로 갈린다.
+      const rawText = await recognizeDrugLabel(compressed)
       setProgress(90)
       setStatusText('개인정보 지우는 중...')
 
-      const rawText: string = data.text || ''
+      // 약 추출은 raw 에서 한다. maskPII 의 "단독 줄 한글 2~4자 → 이름" 규칙이
+      // 단독 줄에 놓인 약품명(록소닌정, 아스피린 …)까지 지워버려서, 마스킹된 텍스트로
+      // 파싱하면 약이 조용히 누락된다. 마스킹은 저장·표시용으로만 쓴다.
       const maskedText = maskPII(rawText)
-      const drugs = parseDrugs(maskedText)
+      const drugs = parseDrugs(rawText)
 
       setProgress(100)
       setStatusText('완료!')
@@ -115,7 +108,9 @@ export default function ScanPage() {
             </div>
           </div>
 
-          <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />
+          {/* capture 속성을 주면 iOS 가 카메라로 직행해서 "선택"이 불가능해진다.
+              보관함에 이미 찍어둔 봉투 사진을 쓰는 경우가 많으므로 선택 시트를 띄운다. */}
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
 
           {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl">

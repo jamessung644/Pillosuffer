@@ -1,0 +1,16 @@
+{
+  "name": "vision-ocr",
+  "version": "1.0.0",
+  "description": "온디바이스 Apple Vision 텍스트 인식 (약 봉투 OCR)",
+  "license": "UNLICENSED",
+  "private": true,
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "files": [
+    "ios/Sources",
+    "VisionOcr.podspec"
+  ]
+}
