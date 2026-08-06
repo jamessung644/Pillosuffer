@@ -9,6 +9,7 @@ import StepProgress from '@/components/StepProgress'
 import Icon from '@/components/Icon'
 import { useAuth } from '@/components/AuthProvider'
 import { apiUrl } from '@/lib/api'
+import { createClient } from '@/lib/supabase'
 import type { DrugInfo, SafetyResult, SafetyDetail, HistoryEntry, SafetyVerdict } from '@/types'
 
 export default function ResultPage() {
@@ -17,6 +18,7 @@ export default function ResultPage() {
   const [result, setResult] = useState<SafetyResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [limitReached, setLimitReached] = useState<{ used: number; limit: number } | null>(null)
   const [tab, setTab] = useState<'result' | 'history'>('result')
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [dbStats, setDbStats] = useState<{ matchCount: number; edrugCount: number; searchedDrugs: number; searchedFoods: number } | null>(null)
@@ -94,10 +96,14 @@ export default function ResultPage() {
         searchedFoods: mfdsData.searchedFoods ?? foods.length,
       })
 
-      // 2. AI 안전 확인
+      // 2. AI 안전 확인 — 월 사용량 제한이 걸린 엔드포인트라 액세스 토큰이 필요하다.
+      const { data: { session } } = await createClient().auth.getSession()
       const safetyRes = await fetch(apiUrl('/api/safety-check'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({
           drugs,
           foods,
@@ -106,6 +112,17 @@ export default function ResultPage() {
           drugProfiles: mfdsData.drugProfiles || [],
         }),
       })
+
+      if (!safetyRes.ok) {
+        const err = await safetyRes.json().catch(() => ({}))
+        if (err.code === 'MONTHLY_LIMIT_REACHED') {
+          setLimitReached({ used: err.used ?? 0, limit: err.limit ?? 0 })
+          setLoading(false)
+          return
+        }
+        throw new Error(err.error || '안전 확인에 실패했습니다.')
+      }
+
       const safetyData: SafetyResult = await safetyRes.json()
 
       setResult(safetyData)
@@ -189,6 +206,34 @@ export default function ResultPage() {
     )
   }
 
+  if (limitReached) {
+    return (
+      <div className="page-padding flex flex-col items-center justify-center min-h-screen gap-5">
+        <span className="text-5xl">📅</span>
+        <div className="text-center">
+          <p className="text-xl font-bold text-gray-900">이번 달 분석을 모두 사용했습니다</p>
+          <p className="text-base text-gray-500 mt-2 leading-relaxed">
+            약 분석은 한 달에 {limitReached.limit}회까지 이용할 수 있어요.<br />
+            다음 달 1일에 다시 {limitReached.limit}회가 주어집니다.
+          </p>
+        </div>
+        {/* 한도와 무관하게 접근 가능한 경로를 제시한다 — 막다른 화면이 되지 않게. */}
+        <div className="w-full space-y-3 pt-2">
+          <Link href="/my-meds" className="btn-secondary block text-center">
+            내 약 정보 보기
+          </Link>
+          <Link href="/" className="btn-primary block text-center">
+            홈으로
+          </Link>
+        </div>
+        <p className="text-sm text-gray-400 text-center leading-relaxed">
+          급하게 확인이 필요하면 약사·의사에게 문의하시거나<br />
+          약사 상담 전화(1399)를 이용하세요.
+        </p>
+      </div>
+    )
+  }
+
   if (error) {
     return (
       <div className="page-padding flex flex-col items-center justify-center min-h-screen gap-6">
@@ -196,7 +241,7 @@ export default function ResultPage() {
         <div className="text-center">
           <p className="font-semibold text-gray-800">{error}</p>
         </div>
-        <button onClick={() => { setLoading(true); setError(null); fetchResult() }} className="btn-primary">
+        <button onClick={() => { setLoading(true); setError(null); setLimitReached(null); fetchResult() }} className="btn-primary">
           다시 시도
         </button>
       </div>
