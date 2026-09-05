@@ -1,0 +1,12 @@
+.env
+.env.*
+.vercel
+.next
+node_modules
+tsconfig.tsbuildinfo
+tests
+
+# iOS 앱 산출물 — 웹 빌드에 불필요하고 Pods 때문에 용량이 크다.
+# plugins/ 는 package.json 의 file: 의존성이라 제외하면 npm install 이 실패한다.
+ios
+.next-ios

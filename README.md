@@ -5,13 +5,16 @@
 
 ## 공개 저장소 안내
 
-이 저장소는 **PilloSuffer 프로젝트 소개 및 발표 자료 기반 README**를 제공하기 위한 공개용 저장소입니다.  
-서비스의 핵심 구현 코드와 내부 데이터 처리 로직은 핵심 기술 보호를 위해 공개 저장소에서 제외했습니다.
+이 저장소는 **PilloSuffer 프로젝트 소개·발표 자료와 현재 운영 중인 v1 웹 앱 코드**를 제공합니다.
+2026-09-06 사용자 요청에 따라 최신 운영 코드를 [`Pillosuffer_v1/`](Pillosuffer_v1/)에 공개했습니다. 실제 API 키·환경파일·데이터베이스 원본과 v3는 포함하지 않습니다.
+
+- [운영 사이트](https://pillosuffer-v1.vercel.app)
+- [코드 실행·환경변수·배포 안내](Pillosuffer_v1/README.md)
+- 현재 모델은 Gemini 3.8 Flash이며 아래 발표 자료의 과거 평가 결과와 현재 버전 검증 범위는 구분해야 합니다.
 
 본 README는 다음 발표 자료를 기반으로 재구성했습니다.
 
 - [아...뭐먹지 팀 발표자료](docs/pillosuffer-presentation.pdf)
-- [발표대본](docs/pillosuffer-script.pdf)
 
 ## 발표 자료
 
@@ -20,7 +23,6 @@
 | 문서 | 설명 |
 | --- | --- |
 | [pillosuffer-presentation.pdf](docs/pillosuffer-presentation.pdf) | 문제정의, 사용자 조사, 솔루션, 기술 구조, 검증 결과를 담은 팀 발표자료 |
-| [pillosuffer-script.pdf](docs/pillosuffer-script.pdf) | 발표 흐름과 구두 설명을 정리한 발표대본 |
 
 ## 한 줄 소개
 
@@ -139,7 +141,7 @@ flowchart TD
 
 ## 기술 개요
 
-핵심 구현 코드는 공개하지 않지만, 발표 자료 기준의 기술 구성은 다음과 같습니다.
+발표 자료 기준의 기술 구성은 다음과 같습니다. 현재 구현과 실행 방법은 [`Pillosuffer_v1/README.md`](Pillosuffer_v1/README.md)를 참고하세요.
 
 | 영역 | 설명 |
 | --- | --- |
@@ -148,7 +150,7 @@ flowchart TD
 | Food DB | 가공식품 및 영양 성분 검색 데이터 활용 |
 | Drug DB | 식약처 공공데이터와 DrugBank 기반 상호작용 데이터 결합 |
 | RAG | 검색된 근거를 LLM 컨텍스트로 주입 |
-| LLM | 낮은 temperature 설정으로 자유도를 낮추고 근거 기반 문장 생성 |
+| LLM | 검색 근거를 바탕으로 문장 생성. 현재 공개 코드에서는 Gemini 3.8 Flash와 low 추론 설정 사용 |
 | UX | 노년층도 이해하기 쉬운 큰 글씨, 단순 단계, 명확한 결과 표시 |
 
 ## 데이터 아키텍처 요약

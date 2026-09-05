@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: 0;
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button, a, input, textarea, select {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 3px;
+  }
+
+  input, select, textarea { min-width: 0; }
+  p, h1, h2, h3, button, a, label { overflow-wrap: anywhere; }
+}
+
+@layer utilities {
+  /*
+   * 폰 화면(<640px)에서는 풀폭. 데스크톱에서는 읽기 편한 너비로 가운데 정렬한다.
+   * iOS 앱에서는 항상 풀폭이 되어 좌우 회색 띠가 생기지 않는다.
+   */
+  .mobile-container {
+    @apply w-full mx-auto min-h-screen relative sm:max-w-md;
+  }
+
+  /* pt-6 / pb-24 에 노치·홈 인디케이터 인셋을 더한다. 웹에서는 env() 가 0 이라 동일. */
+  .page-padding {
+    @apply px-4;
+    padding-top: calc(1.5rem + env(safe-area-inset-top));
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+
+  /* 하단 고정 요소(BottomNav)가 홈 인디케이터에 깔리지 않게 한다. */
+  .safe-area-bottom {
+    padding-bottom: calc(0.625rem + env(safe-area-inset-bottom));
+  }
+
+  /* viewport-fit=cover 때문에 스크롤한 본문이 상태바 밑을 지나가며 시계·배터리와
+     겹친다. 그 영역만 iOS 기본 스타일의 반투명 띠로 덮는다.
+     웹에서는 env() 가 0 이라 높이 0 으로 사라진다. */
+  .status-bar-scrim {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    /* BottomNav(50) 위, SaveSuccessOverlay(100) 아래 */
+    z-index: 60;
+    pointer-events: none;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100;
+  }
+
+  .btn-primary {
+    @apply w-full py-5 bg-blue-600 text-white font-bold rounded-2xl text-lg
+           active:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply w-full py-5 bg-gray-100 text-gray-700 font-bold rounded-2xl text-lg
+           active:bg-gray-200 transition-colors;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  .animate-spin, .animate-pulse { animation: none; }
+}

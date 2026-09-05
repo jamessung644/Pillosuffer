@@ -1,0 +1,26 @@
+.DS_Store
+.idea/
+.vscode/
+.claude/
+.gstack/
+node_modules/
+.next/
+.next-ios/
+out/
+.vercel/
+*.tsbuildinfo
+*.log
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*-credentials.json
+service-account*.json
+sql data/
+*.csv
+*.xlsx
+*.xls
+*.sqlite
+*.db
+Pillosuffer_v3/
