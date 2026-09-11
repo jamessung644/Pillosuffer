@@ -3,15 +3,22 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import SafetyBadge, { EVIDENCE_CONFIG, type EvidenceStatus } from '@/components/SafetyBadge'
+import SafetyBadge, { GUIDANCE_CONFIG, type GuidanceStatus } from '@/components/SafetyBadge'
 import SourceCitation from '@/components/SourceCitation'
 import StepProgress from '@/components/StepProgress'
 import Icon from '@/components/Icon'
 import { useAuth } from '@/components/AuthProvider'
 import { checkSafety, type DbStats } from '@/lib/checkSafety'
 import { getSavedDrugs } from '@/lib/storage'
-import { parseStoredJson, readDrugs, readFoods, readHistory } from '@/lib/validation'
+import { isEvidenceResult, parseStoredJson, readDrugs, readFoods, readHistory } from '@/lib/validation'
+import { getSourceGuidance } from '@/lib/evidence'
 import type { DrugInfo, SafetyResult, SafetyDetail, HistoryEntry } from '@/types'
+
+function summaryStatus(details: SafetyDetail[]): GuidanceStatus {
+  const actions = details.map(detail => getSourceGuidance(detail).action)
+  if (actions.includes('avoid')) return 'avoid'
+  return actions.length > 0 && actions.every(action => action === 'allowed') ? 'allowed' : 'check'
+}
 
 export default function ResultPage() {
   const router = useRouter()
@@ -139,8 +146,7 @@ export default function ResultPage() {
     )
   }, [result, drugFilter, hasBothSources, sessionDrugNames])
 
-  const filteredStatus: EvidenceStatus = filteredDetails.length > 0 &&
-    filteredDetails.every(detail => detail.evidenceStatus === 'found') ? 'found' : 'missing'
+  const filteredStatus = summaryStatus(filteredDetails)
 
   if (loading) {
     return (
@@ -219,10 +225,8 @@ export default function ResultPage() {
           <SafetyBadge status={filteredStatus} size="lg" />
 
           {dbStats && (
-            <div className="py-3 border-y border-gray-200 text-sm text-gray-600">
-              <p>검색된 원문 {dbStats.matchCount}건</p>
-              <p className="mt-1">약품 {dbStats.searchedDrugs}개 · 음식 {dbStats.searchedFoods}개</p>
-              <p className="mt-2 leading-relaxed">보관본에서 약품명·공식 성분명과 음식 이름을 검색합니다. 검색 누락 가능성이 있으며, 자료가 없다는 이유로 안전하다고 판단하지 않습니다.</p>
+            <div className="py-2 text-sm text-gray-600">
+              <p>약품 {dbStats.searchedDrugs}개 · 음식 {dbStats.searchedFoods}개</p>
             </div>
           )}
 
@@ -256,33 +260,40 @@ export default function ResultPage() {
             )}
             <p className="text-lg font-bold text-gray-800">항목별 안내</p>
             {filteredDetails.map((detail: SafetyDetail, i: number) => {
-              const status = detail.evidenceStatus ?? 'legacy'
-              const cfg = EVIDENCE_CONFIG[status]
+              const guidance = getSourceGuidance(detail)
+              const status = guidance.action
+              const cfg = GUIDANCE_CONFIG[status]
               return (
                 <div
                   key={i}
+                  data-guidance-card={status}
                   className={`rounded-2xl border ${cfg.border} ${cfg.cardBg}`}
                 >
                   <div className="p-4">
                     {/* 상단: 아이콘 + 약품/음식 + 배지 */}
                     <div className="mb-3">
                       <div className="mb-2"><SafetyBadge status={status} size="sm" /></div>
-                      <p className="text-base text-gray-700 font-medium">{detail.drug}</p>
-                      <p className={`font-bold text-lg mt-1 ${cfg.textStrong}`}>× {detail.food}</p>
+                      <p className="text-lg text-gray-800 font-semibold break-words">{detail.drug} + {detail.food}</p>
+                      <h2 className={`font-bold text-2xl leading-snug mt-3 break-words ${cfg.textStrong}`}>{guidance.title}</h2>
                     </div>
 
                     {/* 본문 */}
-                    <p className="text-base text-gray-700 leading-relaxed break-words">
-                      {detail.reason}
+                    <p className="text-lg text-gray-800 leading-relaxed break-words">
+                      {guidance.reason}
                     </p>
 
-                    {detail.references?.map(reference => (
-                      <div key={reference.id} className="mt-4 pt-3 border-t border-gray-200">
-                        <p className="text-xs font-semibold text-gray-600 mb-2">검색된 원문 · {reference.matchedDrug} / {reference.matchedTerm}</p>
-                        <p className="text-base text-gray-800 leading-relaxed break-words whitespace-pre-wrap">{reference.quote}</p>
-                        <SourceCitation source={reference.source} citation={reference.citation} recordId={reference.id} />
-                      </div>
-                    ))}
+                    {!!detail.references?.length && (
+                      <details className="mt-4 border-t border-gray-200">
+                        <summary className="py-3 text-base font-semibold text-gray-700 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">출처·원문 보기</summary>
+                        {detail.references.map(reference => (
+                          <div key={reference.id} className="pb-3 last:pb-0">
+                            <p className="text-sm font-semibold text-gray-600 mb-2">검색된 원문 · {reference.matchedDrug} / {reference.matchedTerm}</p>
+                            <p className="text-base text-gray-800 leading-relaxed break-words whitespace-pre-wrap">{reference.quote}</p>
+                            <SourceCitation source={reference.source} citation={reference.citation} recordId={reference.id} />
+                          </div>
+                        ))}
+                      </details>
+                    )}
                   </div>
                 </div>
               )
@@ -311,9 +322,8 @@ export default function ResultPage() {
             </div>
           ) : (
             history.map((entry: HistoryEntry) => {
-              const status: EvidenceStatus = entry.result.mode !== 'retrieval-only-v1' ? 'legacy' :
-                entry.result.details.every(detail => detail.evidenceStatus === 'found') ? 'found' : 'missing'
-              const cfg = EVIDENCE_CONFIG[status]
+              const status: GuidanceStatus = isEvidenceResult(entry.result) ? summaryStatus(entry.result.details) : 'legacy'
+              const cfg = GUIDANCE_CONFIG[status]
               return (
                 <div key={entry.id} className={`card p-4 border ${cfg.border}`}>
                   <div className="flex items-center justify-between mb-2">

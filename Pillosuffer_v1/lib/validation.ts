@@ -1,5 +1,5 @@
 import type { DrugInfo, HistoryEntry, SafetyResult, ScanSession } from '@/types'
-import { DATASET_SHA256 } from './evidence'
+import { DATASET_SHA256, getSourceGuidance } from './evidence'
 
 export function parseStoredJson(raw: string | null): unknown {
   try { return raw ? JSON.parse(raw) : null } catch { return null }
@@ -65,5 +65,8 @@ export function isEvidenceResult(value: unknown): value is SafetyResult {
       (detail.evidenceStatus === 'found' ? detail.references.length > 0 : detail.evidenceStatus === 'missing' && detail.references.length === 0) &&
       detail.references.every(ref => isRecord(ref) && ref.drug === detail.drug && ref.food === detail.food &&
         ref.datasetSha256 === DATASET_SHA256 &&
-        ['id', 'matchedDrug', 'matchedTerm', 'quote', 'source', 'citation'].every(key => typeof ref[key] === 'string' && !!ref[key].trim())))
+        ['id', 'matchedDrug', 'matchedTerm', 'quote', 'source', 'citation'].every(key => typeof ref[key] === 'string' && !!ref[key].trim())) &&
+      (detail.ingredientNames === undefined || (Array.isArray(detail.ingredientNames) && detail.ingredientNames.every(name => typeof name === 'string' && !!name.trim()))) &&
+      (detail.guidance === undefined || (isRecord(detail.guidance) &&
+        (['action', 'title', 'reason'] as const).every(key => detail.guidance![key] === getSourceGuidance(detail)[key]))))
 }

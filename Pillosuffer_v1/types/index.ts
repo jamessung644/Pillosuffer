@@ -8,6 +8,12 @@ export interface DrugInfo {
 
 export type SafetyVerdict = 'safe' | 'caution' | 'danger'
 
+export interface EvidenceGuidance {
+  action: 'allowed' | 'avoid' | 'check'
+  title: string
+  reason: string
+}
+
 export interface EvidenceReference {
   id: string
   drug: string
@@ -28,6 +34,8 @@ export interface SafetyDetail {
   source?: string
   evidenceStatus?: 'found' | 'missing'
   references?: EvidenceReference[]
+  ingredientNames?: string[]
+  guidance?: EvidenceGuidance
 }
 
 export interface SafetyResult {

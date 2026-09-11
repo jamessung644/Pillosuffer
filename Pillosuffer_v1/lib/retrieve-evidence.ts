@@ -11,11 +11,13 @@ export async function retrieveEvidence(drugs: DrugInfo[], foods: string[]) {
   if (corpusError || count !== DATASET_ROWS) throw new Error('Evidence corpus is unavailable or incomplete')
 
   const records: EvidenceReference[] = []
+  const ingredients: Record<string, string[]> = Object.create(null)
   await Promise.all(drugs.map(async drug => {
     const keywords = new Set([drug.name.trim().toLowerCase()])
     const profile = await resolveIngredient(drug.name)
     if (profile && sameProduct(drug.name, profile.itemName)) {
       profile.eng.forEach(name => keywords.add(name.toLowerCase()))
+      ingredients[drug.name] = profile.eng
     }
     const rows: EvidenceRow[] = []
     for (const keyword of keywords) {
@@ -27,7 +29,10 @@ export async function retrieveEvidence(drugs: DrugInfo[], foods: string[]) {
       if (error || !Array.isArray(data)) throw new Error('Evidence record lookup failed')
       rows.push(...data)
     }
+    if (!ingredients[drug.name]) {
+      ingredients[drug.name] = [...new Set(rows.filter(row => row.drug_name.toLowerCase() === drug.name.trim().toLowerCase()).map(row => row.drug_name))]
+    }
     for (const food of foods) records.push(...findEvidence(drug.name, food, [...keywords], rows))
   }))
-  return buildEvidenceResult(drugs, foods, records)
+  return buildEvidenceResult(drugs, foods, records, ingredients)
 }

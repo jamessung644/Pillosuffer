@@ -30,17 +30,18 @@ async function main() {
   const browser = await chromium.launch({ headless: true })
   const checks = []
   try {
-    for (const scenario of ['success-found-320', 'success-missing-320', 'success-mixed-320',
-      'success-found-1440', 'success-missing-1440', 'success-mixed-1440', 'db-error', 'safety-error', 'invalid-result']) {
+    for (const scenario of ['success-avoid-320', 'success-allowed-320', 'success-found-320', 'success-missing-320', 'success-mixed-320',
+      'success-avoid-1440', 'success-allowed-1440', 'success-found-1440', 'success-missing-1440', 'success-mixed-1440', 'db-error', 'safety-error', 'invalid-result']) {
       const width = scenario.endsWith('1440') ? 1440 : 320
       const status = scenario.startsWith('success') ? scenario.split('-')[1] : 'missing'
-      const scenarioFoods = status === 'mixed' ? [...foods, 'Second test food'] : foods
+      const scenarioFoods = status === 'allowed' ? ['물'] : status === 'avoid' ? ['알코올'] : status === 'mixed' ? ['알코올', ...foods] : foods
       const scenarioResult = { ...result, details: scenarioFoods.map((food, index) => {
         const found = index === 0 && status !== 'missing'
-        return { ...result.details[0], food, evidenceStatus: found ? 'found' : 'missing',
+        return { ...result.details[0], food, evidenceStatus: found ? 'found' : 'missing', ingredientNames: ['Synthetic ingredient'],
           references: found ? [{ id: 'synthetic-test-reference', drug: drugs[0].name, food,
-            matchedDrug: 'Synthetic ingredient', matchedTerm: 'Synthetic food',
-            quote: 'Synthetic reference text for layout testing, not medical guidance.',
+            matchedDrug: 'Synthetic ingredient', matchedTerm: status === 'allowed' ? 'water' : ['avoid', 'mixed'].includes(status) ? 'alcohol' : 'Synthetic food',
+            quote: status === 'allowed' ? 'Take with a full glass of water.' : ['avoid', 'mixed'].includes(status)
+              ? 'Avoid alcohol. Alcohol may increase the risk of hepatotoxicity.' : 'Synthetic reference text for layout testing, not medical guidance.',
             source: 'Test archive', citation: 'Test reference',
             datasetSha256: '8078106b88873f4e8c8b6656cf933a933d9fc29b6c8bf3427f6b81ec3ee9b17c' }] : [] }
       }) }
@@ -79,7 +80,10 @@ async function main() {
           console.log(JSON.stringify({ scenario, path: new URL(page.url()).pathname, body: await page.locator('body').innerText(), errors, calls }))
           throw error
         }
-        await page.getByText(result.details[0].reason, { exact: true }).first().waitFor()
+        const action = ['avoid', 'mixed'].includes(status) ? 'avoid' : status === 'allowed' ? 'allowed' : 'check'
+        const card = page.locator('[data-guidance-card]').first()
+        assert.equal(await card.getAttribute('data-guidance-card'), action)
+        await card.getByRole('heading', { name: action === 'avoid' ? '술은 피하세요' : action === 'allowed' ? '물과 함께 복용하세요' : '약사에게 확인하세요' }).waitFor()
         assert.equal(calls, 1, 'Unchanged user must not trigger duplicate analysis')
         assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('pillosuffer-history')).length), 2)
         assert.equal(await page.locator('a[href="tel:1399"]').count(), 0)
@@ -87,10 +91,9 @@ async function main() {
         assert(!overflow, 'Result layout should fit viewport')
         assert.equal(await page.getByText('양호', { exact: true }).count(), 0)
         assert.equal(await page.getByText('AI 추론', { exact: true }).count(), 0)
-        const card = page.getByText(result.details[0].reason, { exact: true }).first().locator('../..')
         const frame = await card.evaluate(element => {
           const style = getComputedStyle(element)
-          const content = getComputedStyle(element.querySelector('p').parentElement.parentElement)
+          const content = getComputedStyle(element.firstElementChild)
           return {
             bars: [...element.children].filter(child => getComputedStyle(child).position === 'absolute').length,
             borders: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth],
@@ -104,9 +107,16 @@ async function main() {
         assert.equal(frame.bars, 0, 'Result cards must not have decorative side bars')
         assert(frame.borders.every(border => border === frame.borders[0]), 'Result card borders must be uniform')
         assert.equal(frame.padding[0], frame.padding[1], 'Result card padding must be balanced')
-        assert.equal(frame.background, status === 'missing' ? 'rgb(255, 251, 235)' : 'rgb(239, 246, 255)', 'Evidence states must retain distinct colored surfaces')
-        assert.equal(frame.badgeBackground, status === 'missing' ? 'rgb(180, 83, 9)' : 'rgb(29, 78, 216)')
+        assert.equal(frame.background, action === 'avoid' ? 'rgb(255, 241, 242)' : action === 'allowed' ? 'rgb(236, 253, 245)' : 'rgb(255, 251, 235)', 'Use the original red, green and amber card colors')
+        assert.equal(frame.badgeBackground, action === 'avoid' ? 'rgb(190, 18, 60)' : action === 'allowed' ? 'rgb(4, 120, 87)' : 'rgb(180, 83, 9)')
         assert.equal(frame.badgeText, 'rgb(255, 255, 255)', 'Status pills must keep legible contrast')
+        if (scenarioResult.details[0].references.length) {
+          const quote = card.getByText(scenarioResult.details[0].references[0].quote, { exact: true })
+          assert.equal(await quote.isVisible(), false, 'Long English references must start collapsed')
+          await card.getByText('출처·원문 보기', { exact: true }).click()
+          await quote.waitFor({ state: 'visible' })
+          assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+        }
         await page.getByRole('button', { name: '이전 기록', exact: true }).click()
         await page.getByText(drugs[0].name, { exact: false }).first().waitFor()
         await page.getByText('재확인 필요', { exact: true }).waitFor()
