@@ -16,7 +16,8 @@ const { checkSafety } = require('../lib/checkSafety.ts')
 const drugs = [{ name: 'UI test medicine', dose: '10mg' }]
 const foods = ['Test food']
 const result = {
-  verdict: 'caution', details: [{ drug: drugs[0].name, food: foods[0], verdict: 'caution', reason: 'Synthetic test only' }],
+  mode: 'retrieval-only-v1',
+  verdict: 'caution', details: [{ drug: drugs[0].name, food: foods[0], verdict: 'caution', reason: 'Synthetic test only', evidenceStatus: 'missing', references: [] }],
   disclaimer: 'Test fixture, not medical guidance', checkedAt: '2026-09-06T00:00:00.000Z',
 }
 const history = { id: 'test', drugs, foods, result }
@@ -105,44 +106,53 @@ function mockResponses(responses) {
   }
   return calls
 }
-const db = { contraindications: [], edrugInfo: [], drugProfiles: [], matchCount: 0 }
 const run = () => checkSafety(drugs, foods, new AbortController().signal, () => {})
 
-test('DB failure stops before analysis', async () => {
-  const calls = mockResponses([{ status: 500, body: { error: 'DB unavailable' } }])
-  await assert.rejects(run, /약품 데이터 조회/)
+test('unavailable evidence stops without producing a result', async () => {
+  const calls = mockResponses([{ status: 503, body: { code: 'EVIDENCE_UNAVAILABLE' } }])
+  await assert.rejects(run, /근거 데이터가 확인되지 않아/)
   assert.equal(calls.length, 1)
 })
 
-test('malformed DB success payload is rejected', async () => {
-  mockResponses([{ body: { error: 'DB unavailable' } }])
-  await assert.rejects(run, /약품 데이터 응답/)
+test('legacy generated responses are rejected even if their shape looks valid', async () => {
+  mockResponses([{ body: { ...result, mode: undefined } }])
+  await assert.rejects(run, /원문 조회 결과가 아닙니다/)
 })
 
 test('analysis HTTP error cannot become a successful result', async () => {
-  mockResponses([{ body: db }, { status: 503, body: { error: 'Busy' } }])
+  mockResponses([{ status: 503, body: { error: 'Busy' } }])
   await assert.rejects(run, /분석 서버/)
 })
 
-test('incomplete analysis payload cannot become a successful result', async () => {
-  mockResponses([{ body: db }, { body: { ...result, details: [] } }])
-  await assert.rejects(run, /분석 결과가 불완전/)
+test('incomplete or unsupported analysis payload cannot become a successful result', async () => {
+  for (const invalid of [{ ...result, details: [] }, { ...result, verdict: 'safe' },
+    { ...result, details: [{ ...result.details[0], evidenceStatus: 'found', references: [] }] }]) {
+    mockResponses([{ body: invalid }])
+    await assert.rejects(run, /원문 조회 결과가 아닙니다/)
+  }
 })
 
 test('non-JSON analysis responses are rejected', async () => {
-  mockResponses([{ body: db }, { body: '<html>Gateway error</html>' }])
+  mockResponses([{ body: '<html>Gateway error</html>' }])
   await assert.rejects(run)
 })
 
-test('valid analysis passes selected inputs and abort signal through both requests', async () => {
-  const calls = mockResponses([{ body: db }, { body: result }])
+test('only selected inputs are sent to the authoritative server', async () => {
+  const calls = mockResponses([{ body: result }])
   const controller = new AbortController()
   let stats
   assert.deepEqual(await checkSafety(drugs, foods, controller.signal, value => { stats = value }), result)
-  assert.equal(calls.length, 2)
-  assert(calls.every(call => call.options.signal === controller.signal))
-  assert.deepEqual(JSON.parse(calls[1].options.body).drugs, drugs)
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].options.signal, controller.signal)
+  assert.deepEqual(JSON.parse(calls[0].options.body), { drugs, foods })
   assert.deepEqual(stats, { matchCount: 0, edrugCount: 0, searchedDrugs: 1, searchedFoods: 1 })
+})
+
+test('missing, duplicate and unrelated pairs cannot pass as a complete result', async () => {
+  for (const details of [[{ ...result.details[0], drug: 'Other medicine' }], [result.details[0], result.details[0]]]) {
+    mockResponses([{ body: { ...result, details } }])
+    await assert.rejects(run, /조합과 결과가 일치하지 않습니다/)
+  }
 })
 
 test('cancelled analysis propagates abort', async () => {

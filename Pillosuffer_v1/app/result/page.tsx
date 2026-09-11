@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import SafetyBadge, { VERDICT_CONFIG } from '@/components/SafetyBadge'
+import SafetyBadge, { EVIDENCE_CONFIG, type EvidenceStatus } from '@/components/SafetyBadge'
 import SourceCitation from '@/components/SourceCitation'
 import StepProgress from '@/components/StepProgress'
 import Icon from '@/components/Icon'
@@ -11,7 +11,7 @@ import { useAuth } from '@/components/AuthProvider'
 import { checkSafety, type DbStats } from '@/lib/checkSafety'
 import { getSavedDrugs } from '@/lib/storage'
 import { parseStoredJson, readDrugs, readFoods, readHistory } from '@/lib/validation'
-import type { DrugInfo, SafetyResult, SafetyDetail, HistoryEntry, SafetyVerdict } from '@/types'
+import type { DrugInfo, SafetyResult, SafetyDetail, HistoryEntry } from '@/types'
 
 export default function ResultPage() {
   const router = useRouter()
@@ -139,15 +139,8 @@ export default function ResultPage() {
     )
   }, [result, drugFilter, hasBothSources, sessionDrugNames])
 
-  // 필터된 결과 기준 종합 verdict
-  const filteredVerdict = useMemo((): SafetyVerdict => {
-    if (!filteredDetails.length) return result?.verdict ?? 'safe'
-    const order = { safe: 0, caution: 1, danger: 2 } as const
-    const max = filteredDetails.reduce(
-      (m, d) => Math.max(m, order[d.verdict as keyof typeof order] ?? 0), 0
-    )
-    return max === 2 ? 'danger' : max === 1 ? 'caution' : 'safe'
-  }, [filteredDetails, result?.verdict])
+  const filteredStatus: EvidenceStatus = filteredDetails.length > 0 &&
+    filteredDetails.every(detail => detail.evidenceStatus === 'found') ? 'found' : 'missing'
 
   if (loading) {
     return (
@@ -158,11 +151,11 @@ export default function ResultPage() {
           <div className="absolute inset-0 flex items-center justify-center text-2xl">🔍</div>
         </div>
         <div className="text-center">
-          <p className="text-xl font-bold text-gray-800">AI 안전 확인 중...</p>
-          <p className="text-base text-gray-500 mt-1">DrugBank DB를 기반으로 분석하고 있습니다</p>
+          <p className="text-xl font-bold text-gray-800">근거 자료 확인 중...</p>
+          <p className="text-base text-gray-500 mt-1">상호작용 원문을 조회하고 있습니다</p>
         </div>
         <div className="w-full space-y-2">
-          {['DrugBank DB 검색 중...', 'AI 분석 중...', '결과 생성 중...'].map((text, i) => (
+          {['약품 정보 확인 중...', '상호작용 근거 조회 중...'].map((text, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
               <p className="text-sm text-gray-400">{text}</p>
@@ -223,47 +216,13 @@ export default function ResultPage() {
         <div className="space-y-4">
           {historyWarning && <p role="status" className="text-sm text-amber-800">분석은 완료했지만 이 기기에 검사 기록을 저장하지 못했습니다.</p>}
           {/* 종합 안내 */}
-          <SafetyBadge verdict={filteredVerdict} size="lg" />
+          <SafetyBadge status={filteredStatus} size="lg" />
 
-          {/* DB 검색 통계 */}
           {dbStats && (
-            <div className="card p-3 bg-gray-50 border border-gray-200">
-              <div className="grid grid-cols-2 gap-3">
-                {/* e약은요 */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${dbStats.edrugCount > 0 ? 'bg-blue-500' : 'bg-gray-300'}`} />
-                    <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-600">e약은요</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className={`text-xl font-bold tabular-nums ${dbStats.edrugCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                      {dbStats.edrugCount}
-                    </span>
-                    <span className="text-[10px] text-gray-500">약품 매칭</span>
-                  </div>
-                </div>
-                {/* DrugBank */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${dbStats.matchCount > 0 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                    <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-600">DrugBank</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className={`text-xl font-bold tabular-nums ${dbStats.matchCount > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
-                      {dbStats.matchCount}
-                    </span>
-                    <span className="text-[10px] text-gray-500">상호작용</span>
-                  </div>
-                </div>
-              </div>
-              <div className="text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-200">
-                약품 {dbStats.searchedDrugs}개 × 음식 {dbStats.searchedFoods}개 조합 분석
-              </div>
-              {dbStats.matchCount === 0 && dbStats.edrugCount === 0 && (
-                <p className="text-[10px] text-gray-500 mt-1.5 leading-relaxed">
-                  💡 DB에 해당 약물·음식 조합 데이터가 없어 AI가 일반 의학 지식으로 안내합니다
-                </p>
-              )}
+            <div className="py-3 border-y border-gray-200 text-sm text-gray-600">
+              <p>검색된 원문 {dbStats.matchCount}건</p>
+              <p className="mt-1">약품 {dbStats.searchedDrugs}개 · 음식 {dbStats.searchedFoods}개</p>
+              <p className="mt-2 leading-relaxed">보관본에서 약품명·공식 성분명과 음식 이름을 검색합니다. 검색 누락 가능성이 있으며, 자료가 없다는 이유로 안전하다고 판단하지 않습니다.</p>
             </div>
           )}
 
@@ -297,50 +256,43 @@ export default function ResultPage() {
             )}
             <p className="text-lg font-bold text-gray-800">항목별 안내</p>
             {filteredDetails.map((detail: SafetyDetail, i: number) => {
-              const v = (['safe','caution','danger'] as const).includes(detail.verdict as 'safe' | 'caution' | 'danger') ? detail.verdict : 'caution'
-              const cfg = VERDICT_CONFIG[v]
+              const status = detail.evidenceStatus ?? 'legacy'
+              const cfg = EVIDENCE_CONFIG[status]
               return (
                 <div
                   key={i}
-                  className={`relative rounded-2xl overflow-hidden border ${cfg.border} ${cfg.cardBg}`}
+                  className={`rounded-2xl border ${cfg.border} ${cfg.cardBg}`}
                 >
-                  {/* 좌측 컬러 바 */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${cfg.leftBar}`} />
-
-                  <div className="p-4 pl-5">
+                  <div className="p-4">
                     {/* 상단: 아이콘 + 약품/음식 + 배지 */}
                     <div className="mb-3">
-                      <div className="mb-2"><SafetyBadge verdict={detail.verdict} size="sm" /></div>
+                      <div className="mb-2"><SafetyBadge status={status} size="sm" /></div>
                       <p className="text-base text-gray-700 font-medium">{detail.drug}</p>
                       <p className={`font-bold text-lg mt-1 ${cfg.textStrong}`}>× {detail.food}</p>
                     </div>
 
-                    {/* 본문 — 좌측 들여쓰기로 아이콘과 정렬 */}
+                    {/* 본문 */}
                     <p className="text-base text-gray-700 leading-relaxed break-words">
                       {detail.reason}
                     </p>
 
-                    <div className="mt-2">
-                      <SourceCitation source={detail.source} />
-                    </div>
+                    {detail.references?.map(reference => (
+                      <div key={reference.id} className="mt-4 pt-3 border-t border-gray-200">
+                        <p className="text-xs font-semibold text-gray-600 mb-2">검색된 원문 · {reference.matchedDrug} / {reference.matchedTerm}</p>
+                        <p className="text-base text-gray-800 leading-relaxed break-words whitespace-pre-wrap">{reference.quote}</p>
+                        <SourceCitation source={reference.source} citation={reference.citation} recordId={reference.id} />
+                      </div>
+                    ))}
                   </div>
                 </div>
               )
             })}
           </div>
 
-          {/* 주의 항목 발견 시 CTA */}
-          {filteredVerdict === 'danger' && (
-            <div className="card p-4 bg-red-50 border-red-200">
-              <p className="text-lg font-bold text-red-700 mb-2">전문가 확인이 필요해요</p>
-              <p className="text-base text-red-700 leading-relaxed">이 결과만으로 처방약을 중단하거나 복용량을 바꾸지 마세요. 약사 또는 담당 의사에게 약 이름과 함께 먹을 음식을 알려주고 확인하세요.</p>
-            </div>
-          )}
 
           {/* 면책 조항 */}
           <div className="card p-4 bg-gray-50 border-gray-100">
             <p className="text-sm text-gray-500 leading-relaxed">{result.disclaimer}</p>
-            <p className="text-sm text-gray-400 mt-2">🤖 LLM AI · DrugBank 6.0 · 식품의약품안전처 DB 활용</p>
           </div>
 
           {/* 다시 검사 */}
@@ -359,11 +311,13 @@ export default function ResultPage() {
             </div>
           ) : (
             history.map((entry: HistoryEntry) => {
-              const cfg = VERDICT_CONFIG[entry.result.verdict]
+              const status: EvidenceStatus = entry.result.mode !== 'retrieval-only-v1' ? 'legacy' :
+                entry.result.details.every(detail => detail.evidenceStatus === 'found') ? 'found' : 'missing'
+              const cfg = EVIDENCE_CONFIG[status]
               return (
                 <div key={entry.id} className={`card p-4 border ${cfg.border}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <SafetyBadge verdict={entry.result.verdict} size="sm" />
+                    <SafetyBadge status={status} size="sm" />
                     <p className="text-xs text-gray-300">
                       {new Date(entry.result.checkedAt).toLocaleDateString('ko-KR', {
                         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'

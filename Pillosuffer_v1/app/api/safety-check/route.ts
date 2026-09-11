@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { checkSafety } from '@/lib/safety-llm'
-import type { DrugInfo, MfdsContraindication, EdrugInfo, DrugProfile } from '@/types'
+import { retrieveEvidence } from '@/lib/retrieve-evidence'
+import { isDrug, isRecord, readDrugs, readFoods } from '@/lib/validation'
+
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
+  const body: unknown = await request.json().catch(() => null)
+  if (!isRecord(body) || !Array.isArray(body.drugs) || !Array.isArray(body.foods) ||
+    !body.drugs.length || body.drugs.length > 10 || !body.drugs.every(d => isDrug(d) && d.name.length <= 100) ||
+    !body.foods.length || body.foods.length > 10 || !body.foods.every(f => typeof f === 'string' && !!f.trim() && f.length <= 100)) {
+    return NextResponse.json({ error: '약품과 음식을 각각 1~10개 입력해 주세요.' }, { status: 400 })
+  }
   try {
-    const body = await request.json()
-    const drugs: DrugInfo[] = body.drugs || []
-    const foods: string[] = body.foods || []
-    const mfdsContext: MfdsContraindication[] = body.mfdsContext || []
-    const edrugInfo: EdrugInfo[] = body.edrugInfo || []
-    const drugProfiles: DrugProfile[] = body.drugProfiles || []
-
-    if (!drugs.length || !foods.length) {
-      return NextResponse.json({ error: '약품과 음식 정보가 필요합니다.' }, { status: 400 })
-    }
-
-    const result = await checkSafety(drugs, foods, mfdsContext, edrugInfo, drugProfiles)
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error('[API/safety-check]', error)
-    return NextResponse.json({ error: '안전 확인 실패' }, { status: 500 })
+    // Never accept client-supplied evidence, sources, ingredient guesses, or verdicts.
+    const result = await retrieveEvidence(readDrugs(body.drugs), readFoods(body.foods))
+    return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } })
+  } catch {
+    return NextResponse.json(
+      { code: 'EVIDENCE_UNAVAILABLE', error: '상호작용 근거 데이터가 확인되지 않아 결과 생성을 중단했습니다. 약사 또는 의사에게 확인해 주세요.' },
+      { status: 503 }
+    )
   }
 }
 

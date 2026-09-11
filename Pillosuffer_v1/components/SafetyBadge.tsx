@@ -1,99 +1,32 @@
 'use client'
 
-import type { SafetyVerdict } from '@/types'
+export type EvidenceStatus = 'found' | 'missing' | 'legacy'
 
-const VERDICT_CONFIG = {
-  safe: {
-    label: '양호',
-    sub: '특별한 주의 보고 없음',
-    icon: '✓',
-    // 카드용
-    cardBg: 'bg-emerald-50',
-    leftBar: 'bg-emerald-500',
-    // 텍스트/배지용
-    text: 'text-emerald-600',
-    textStrong: 'text-emerald-700',
-    badgeBg: 'bg-emerald-700',
-    badgeText: 'text-white',
-    iconBg: 'bg-emerald-100',
-    iconText: 'text-emerald-600',
-    border: 'border-emerald-200',
-    hex: '#10b981',
+export const EVIDENCE_CONFIG = {
+  found: {
+    label: '원문 있음', sub: '검색어가 일치하는 자료이며 안전 판정이 아닙니다',
+    cardBg: 'bg-blue-50', border: 'border-blue-200', textStrong: 'text-blue-800', badgeBg: 'bg-blue-100',
   },
-  caution: {
-    label: '주의',
-    sub: '약사·의사 확인 권장',
-    icon: '!',
-    cardBg: 'bg-amber-50',
-    leftBar: 'bg-amber-500',
-    text: 'text-amber-600',
-    textStrong: 'text-amber-700',
-    badgeBg: 'bg-amber-700',
-    badgeText: 'text-white',
-    iconBg: 'bg-amber-100',
-    iconText: 'text-amber-600',
-    border: 'border-amber-200',
-    hex: '#f59e0b',
+  missing: {
+    label: '근거 부족', sub: '복용 가능 여부를 판단할 수 없습니다',
+    cardBg: 'bg-gray-50', border: 'border-gray-200', textStrong: 'text-gray-800', badgeBg: 'bg-gray-200',
   },
-  danger: {
-    label: '강한 주의',
-    sub: '전문가 확인 필요',
-    icon: '⨯',
-    cardBg: 'bg-rose-50',
-    leftBar: 'bg-rose-500',
-    text: 'text-rose-600',
-    textStrong: 'text-rose-700',
-    badgeBg: 'bg-rose-700',
-    badgeText: 'text-white',
-    iconBg: 'bg-rose-100',
-    iconText: 'text-rose-600',
-    border: 'border-rose-200',
-    hex: '#ef4444',
+  legacy: {
+    label: '재확인 필요', sub: '이전 방식의 결과로, 확인된 근거로 사용할 수 없습니다',
+    cardBg: 'bg-gray-50', border: 'border-gray-200', textStrong: 'text-gray-700', badgeBg: 'bg-gray-200',
   },
 } as const
 
-interface Props {
-  verdict: SafetyVerdict
-  size?: 'sm' | 'lg'
-}
-
-export default function SafetyBadge({ verdict, size = 'sm' }: Props) {
-  const safeVerdict: SafetyVerdict =
-    verdict === 'safe' || verdict === 'caution' || verdict === 'danger'
-      ? verdict
-      : 'caution'
-  const cfg = VERDICT_CONFIG[safeVerdict]
-
+export default function SafetyBadge({ status, size = 'sm' }: { status: EvidenceStatus; size?: 'sm' | 'lg' }) {
+  const cfg = EVIDENCE_CONFIG[status] ?? EVIDENCE_CONFIG.legacy
   if (size === 'lg') {
     return (
-      <div className={`rounded-2xl p-6 ${cfg.cardBg} border-2 ${cfg.border}`}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-3">
-              <span className={`w-1.5 h-1.5 rounded-full inline-block ${cfg.badgeBg}`} />
-              <span className="text-xs text-gray-600 font-medium">
-                종합 안내
-              </span>
-            </div>
-            <p className={`text-3xl font-bold ${cfg.textStrong}`}>{cfg.label}</p>
-            <p className="text-sm text-gray-600 mt-1">{cfg.sub}</p>
-          </div>
-          <div className={`relative w-16 h-16 shrink-0 rounded-full ${cfg.iconBg} flex items-center justify-center`}>
-            <span className={`${cfg.iconText} text-3xl font-bold`}>
-              {cfg.icon}
-            </span>
-          </div>
-        </div>
+      <div className={`rounded-2xl p-6 border ${cfg.cardBg} ${cfg.border}`}>
+        <p className="text-xs text-gray-600 mb-2">근거 조회 상태</p>
+        <p className={`text-2xl font-bold ${cfg.textStrong}`}>{cfg.label}</p>
+        <p className="text-sm text-gray-600 mt-2 leading-relaxed">{cfg.sub}</p>
       </div>
     )
   }
-
-  return (
-    <span className={`inline-flex shrink-0 items-center gap-1 px-2.5 py-1 rounded-full whitespace-nowrap text-xs font-bold ${cfg.badgeBg} ${cfg.badgeText}`}>
-      <span className="text-[10px]">{cfg.icon}</span>
-      {cfg.label}
-    </span>
-  )
+  return <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold ${cfg.badgeBg} ${cfg.textStrong}`}>{cfg.label}</span>
 }
-
-export { VERDICT_CONFIG }
