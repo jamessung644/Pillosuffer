@@ -15,6 +15,7 @@
  */
 
 import type { DrugInfo, DrugProfile } from '@/types'
+import { sameProduct } from './evidence'
 
 const PRMSN_URL =
   'https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService07/getDrugPrdtPrmsnInq07'
@@ -102,12 +103,12 @@ function normalizeItems(data: unknown): Record<string, string>[] {
   return items as Record<string, string>[]
 }
 
-async function fetchOnce(q: string, key: string): Promise<{ ok: boolean; soft: boolean; item?: Record<string, string> }> {
+async function fetchOnce(q: string, key: string): Promise<{ ok: boolean; soft: boolean; items?: Record<string, string>[] }> {
   const params = new URLSearchParams({
     serviceKey: key,
     item_name: q,
     type: 'json',
-    numOfRows: '1',
+    numOfRows: '100',
     pageNo: '1',
   })
   try {
@@ -118,7 +119,15 @@ async function fetchOnce(q: string, key: string): Promise<{ ok: boolean; soft: b
     if (res.status === 403 || res.status >= 500) return { ok: false, soft: true } // 미승인/전파/일시오류
     if (!res.ok) return { ok: false, soft: false }
     const data = await res.json()
-    return { ok: true, soft: false, item: normalizeItems(data)[0] }
+    const body = data.body ?? data.response?.body
+    const header = data.header ?? data.response?.header
+    const items = normalizeItems(data)
+    const total = Number(body?.totalCount)
+    // A partial page cannot rule out conflicting products. Require a narrower name instead.
+    if (header?.resultCode !== '00' || !Number.isInteger(total) || total !== items.length) {
+      return { ok: false, soft: false }
+    }
+    return { ok: true, soft: false, items }
   } catch {
     return { ok: false, soft: true } // 타임아웃·네트워크
   }
@@ -152,24 +161,28 @@ export async function resolveIngredient(drugName: string): Promise<ResolvedIngre
     }
 
     failureCount = 0
-    const item = r.item
-    if (item) {
-      const eng = parseEng(item.ITEM_INGR_NAME)
-      if (eng.length) {
-        const result: ResolvedIngredient = {
-          source: '식약처 제품허가',
-          itemName: item.ITEM_NAME ?? q,
-          productType: (item.PRDUCT_TYPE ?? '').replace(/^\s*\[[^\]]*\]\s*/, '').trim() || null,
-          entpName: item.ENTP_NAME ?? null,
-          kor: parseKor(item.ITEM_NAME),
-          eng,
-        }
-        cache.set(drugName, result)
-        console.log(`[ingredient] "${drugName}" → ${eng.join(', ')} (${result.itemName})`)
-        return result
+    const matches = (r.items ?? []).filter(item => sameProduct(drugName, item.ITEM_NAME ?? ''))
+    if (matches.length) {
+      const ingredients = matches.map(item => parseEng(item.ITEM_INGR_NAME).sort())
+      const signatures = new Set(ingredients.map(eng => JSON.stringify(eng)))
+      if (ingredients.some(eng => !eng.length) || signatures.size !== 1) {
+        cache.set(drugName, null)
+        return null
       }
+      const item = matches[0]
+      const eng = ingredients[0]
+      const result: ResolvedIngredient = {
+        source: '식약처 제품허가',
+        itemName: item.ITEM_NAME ?? q,
+        productType: (item.PRDUCT_TYPE ?? '').replace(/^\s*\[[^\]]*\]\s*/, '').trim() || null,
+        entpName: item.ENTP_NAME ?? null,
+        kor: parseKor(item.ITEM_NAME),
+        eng,
+      }
+      cache.set(drugName, result)
+      return result
     }
-    // 200·0건 → 다음 후보
+    // No matching official product: try the next search spelling.
   }
 
   cache.set(drugName, null)

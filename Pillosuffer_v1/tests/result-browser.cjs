@@ -95,12 +95,18 @@ async function main() {
             bars: [...element.children].filter(child => getComputedStyle(child).position === 'absolute').length,
             borders: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth],
             padding: [content.paddingLeft, content.paddingRight],
+            background: style.backgroundColor,
+            badgeBackground: getComputedStyle(element.querySelector('span')).backgroundColor,
+            badgeText: getComputedStyle(element.querySelector('span')).color,
           }
         })
         await page.screenshot({ path: path.join(artifacts, `${scenario}.png`), fullPage: true })
         assert.equal(frame.bars, 0, 'Result cards must not have decorative side bars')
         assert(frame.borders.every(border => border === frame.borders[0]), 'Result card borders must be uniform')
         assert.equal(frame.padding[0], frame.padding[1], 'Result card padding must be balanced')
+        assert.equal(frame.background, status === 'missing' ? 'rgb(255, 251, 235)' : 'rgb(239, 246, 255)', 'Evidence states must retain distinct colored surfaces')
+        assert.equal(frame.badgeBackground, status === 'missing' ? 'rgb(180, 83, 9)' : 'rgb(29, 78, 216)')
+        assert.equal(frame.badgeText, 'rgb(255, 255, 255)', 'Status pills must keep legible contrast')
         await page.getByRole('button', { name: '이전 기록', exact: true }).click()
         await page.getByText(drugs[0].name, { exact: false }).first().waitFor()
         await page.getByText('재확인 필요', { exact: true }).waitFor()

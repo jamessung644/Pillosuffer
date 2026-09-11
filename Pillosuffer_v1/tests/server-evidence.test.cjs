@@ -18,7 +18,7 @@ delete process.env.MFDS_API_KEY
 const { POST, OPTIONS } = require('../app/api/safety-check/route.ts')
 const { DATASET_SHA256 } = require('../lib/evidence.ts')
 const originalFetch = global.fetch
-afterEach(() => { global.fetch = originalFetch })
+afterEach(() => { global.fetch = originalFetch; delete process.env.MFDS_API_KEY })
 const row = { id: 'test-row', drug_name: 'test ingredient', interaction_description: 'Synthetic coffee reference.', source: 'Test archive', source_reference: 'Synthetic reference', dataset_sha256: DATASET_SHA256 }
 function database({ count = 2512, rows = [], status = 200 } = {}) {
   const calls = []
@@ -56,6 +56,31 @@ test('matching source text is returned verbatim without transferring it to other
   const body = await (await POST(request())).json()
   assert.equal(body.details[0].references[0].quote, row.interaction_description)
   assert.equal(body.details[0].references[0].citation, row.source_reference)
+  assert.equal(body.details[1].evidenceStatus, 'missing')
+})
+test('Korean brand finds the alcohol reference through the matching official product, not the first hit', async () => {
+  process.env.MFDS_API_KEY = 'synthetic-test-only'
+  global.fetch = async (input, options) => {
+    const url = new URL(String(input))
+    if (url.hostname === 'apis.data.go.kr') {
+      const items = [
+        { ITEM_NAME: '어린이타이레놀산160밀리그램(아세트아미노펜)', ITEM_INGR_NAME: 'Acetaminophen Granules' },
+        { ITEM_NAME: '타이레놀정500밀리그람(아세트아미노펜)', ITEM_INGR_NAME: 'Acetaminophen' },
+      ]
+      return Response.json({ header: { resultCode: '00' }, body: { totalCount: 2,
+        items: items.slice(0, Number(url.searchParams.get('numOfRows'))) } })
+    }
+    assert.equal(url.hostname, 'evidence-test.supabase.co', 'No LLM request is permitted')
+    if (options?.method === 'HEAD') return new Response(null, { headers: { 'content-range': '*/2512' } })
+    return Response.json(url.searchParams.get('drug_name') === 'ilike.acetaminophen'
+      ? [{ ...row, drug_name: 'Acetaminophen', interaction_description: 'Synthetic alcohol reference. Not clinical guidance.' }] : [])
+  }
+  const response = await POST(request({ drugs: [{ name: '타이레놀' }], foods: ['알코올', '커피'] }))
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(body.details[0].evidenceStatus, 'found')
+  assert.equal(body.details[0].references[0].matchedDrug, 'Acetaminophen')
+  assert.equal(body.details[0].references[0].quote, 'Synthetic alcohol reference. Not clinical guidance.')
   assert.equal(body.details[1].evidenceStatus, 'missing')
 })
 test('missing table, failed requests and partial corpus fail closed', async () => {
