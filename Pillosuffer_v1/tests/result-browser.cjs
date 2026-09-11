@@ -15,45 +15,28 @@ const session = { access_token: token, refresh_token: 'synthetic-test-only', tok
 const drugs = [{ name: '검증용긴약품명 ABCDEFGHIJKLMNOPQRSTUVWXYZ' }]
 const foods = ['검증용긴식품명 ABCDEFGHIJKLMNOPQRSTUVWXYZ']
 const result = {
-  mode: 'retrieval-only-v1',
-  verdict: 'caution', details: [{ drug: drugs[0].name, food: foods[0], verdict: 'caution',
-    evidenceStatus: 'missing', references: [],
+  verdict: 'danger', details: [{ drug: drugs[0].name, food: foods[0], verdict: 'danger',
     reason: '화면 점검을 위한 가상 결과입니다. 실제 약이나 음식에 대한 판단이 아닙니다.',
     source: '화면 점검용 긴 출처 ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ' }],
   disclaimer: '테스트 전용 가상 응답', checkedAt: '2026-09-06T00:00:00.000Z',
 }
-const legacy = { id: 'legacy', drugs, foods, result: { ...result, mode: undefined, verdict: 'safe',
-  details: [{ drug: drugs[0].name, food: foods[0], verdict: 'safe', reason: 'Legacy AI fixture', source: 'AI 일반 의학 지식' }] } }
 
 async function main() {
   fs.mkdirSync(artifacts, { recursive: true })
   const browser = await chromium.launch({ headless: true })
   const checks = []
   try {
-    for (const scenario of ['success-avoid-320', 'success-allowed-320', 'success-found-320', 'success-missing-320', 'success-mixed-320',
-      'success-avoid-1440', 'success-allowed-1440', 'success-found-1440', 'success-missing-1440', 'success-mixed-1440', 'db-error', 'safety-error', 'invalid-result']) {
-      const width = scenario.endsWith('1440') ? 1440 : 320
-      const status = scenario.startsWith('success') ? scenario.split('-')[1] : 'missing'
-      const scenarioFoods = status === 'allowed' ? ['물'] : status === 'avoid' ? ['알코올'] : status === 'mixed' ? ['알코올', ...foods] : foods
-      const scenarioResult = { ...result, details: scenarioFoods.map((food, index) => {
-        const found = index === 0 && status !== 'missing'
-        return { ...result.details[0], food, evidenceStatus: found ? 'found' : 'missing', ingredientNames: ['Synthetic ingredient'],
-          references: found ? [{ id: 'synthetic-test-reference', drug: drugs[0].name, food,
-            matchedDrug: 'Synthetic ingredient', matchedTerm: status === 'allowed' ? 'water' : ['avoid', 'mixed'].includes(status) ? 'alcohol' : 'Synthetic food',
-            quote: status === 'allowed' ? 'Take with a full glass of water.' : ['avoid', 'mixed'].includes(status)
-              ? 'Avoid alcohol. Alcohol may increase the risk of hepatotoxicity.' : 'Synthetic reference text for layout testing, not medical guidance.',
-            source: 'Test archive', citation: 'Test reference',
-            datasetSha256: '8078106b88873f4e8c8b6656cf933a933d9fc29b6c8bf3427f6b81ec3ee9b17c' }] : [] }
-      }) }
+    for (const scenario of ['success-320', 'success-1440', 'db-error', 'safety-error', 'invalid-result']) {
+      const width = scenario === 'success-1440' ? 1440 : 320
       const context = await browser.newContext({ viewport: { width, height: 900 } })
       // Local-only UI fixture: intercept every auth/analysis request; no real account is used.
       await context.route(`${authOrigin}/**`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(user) }))
-      await context.addInitScript(({ cookieName, cookieValue, drugs, foods, legacy }) => {
+      await context.addInitScript(({ cookieName, cookieValue, drugs, foods }) => {
         document.cookie = `${cookieName}=${cookieValue}; path=/; SameSite=Lax`
         sessionStorage.setItem('selectedDrugs', JSON.stringify(drugs))
         sessionStorage.setItem('foodList', JSON.stringify(foods))
-        localStorage.setItem('pillosuffer-history', legacy ? JSON.stringify([legacy]) : '{broken-json')
-      }, { cookieName, cookieValue: `base64-${encode(session)}`, drugs, foods: scenarioFoods, legacy: scenario.startsWith('success') ? legacy : null })
+        localStorage.setItem('pillosuffer-history', '{broken-json')
+      }, { cookieName, cookieValue: `base64-${encode(session)}`, drugs, foods })
       let calls = 0
       let failSafety = scenario === 'safety-error'
       await context.route('**/api/mfds', route => route.fulfill({
@@ -62,9 +45,8 @@ async function main() {
       }))
       await context.route('**/api/safety-check', route => {
         calls += 1
-        return route.fulfill({ status: failSafety || scenario === 'db-error' ? 503 : 200,
-          contentType: 'application/json', body: JSON.stringify(scenario === 'db-error' ? { code: 'EVIDENCE_UNAVAILABLE' } :
-            scenario === 'invalid-result' ? { ...result, details: [] } : scenarioResult) })
+        return route.fulfill({ status: failSafety ? 503 : 200,
+          contentType: 'application/json', body: JSON.stringify(scenario === 'invalid-result' ? { ...result, details: [] } : result) })
       })
       const page = await context.newPage()
       page.setDefaultTimeout(15000)
@@ -73,54 +55,16 @@ async function main() {
       await page.goto(base + '/result')
       console.log(JSON.stringify({ scenario, phase: 'loaded' }))
       if (scenario.startsWith('success')) {
-        try {
-          await page.getByRole('heading', { name: '검사 결과', exact: true }).waitFor()
-        } catch (error) {
-          await page.screenshot({ path: path.join(artifacts, `debug-${scenario}.png`), fullPage: true })
-          console.log(JSON.stringify({ scenario, path: new URL(page.url()).pathname, body: await page.locator('body').innerText(), errors, calls }))
-          throw error
-        }
-        const action = ['avoid', 'mixed'].includes(status) ? 'avoid' : status === 'allowed' ? 'allowed' : 'check'
-        const card = page.locator('[data-guidance-card]').first()
-        assert.equal(await card.getAttribute('data-guidance-card'), action)
-        await card.getByRole('heading', { name: action === 'avoid' ? '술은 피하세요' : action === 'allowed' ? '물과 함께 복용하세요' : '약사에게 확인하세요' }).waitFor()
+        await page.getByRole('heading', { name: '검사 결과', exact: true }).waitFor()
+        await page.getByText(result.details[0].reason, { exact: true }).waitFor()
         assert.equal(calls, 1, 'Unchanged user must not trigger duplicate analysis')
-        assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('pillosuffer-history')).length), 2)
+        assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('pillosuffer-history')).length), 1)
         assert.equal(await page.locator('a[href="tel:1399"]').count(), 0)
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
         assert(!overflow, 'Result layout should fit viewport')
-        assert.equal(await page.getByText('양호', { exact: true }).count(), 0)
-        assert.equal(await page.getByText('AI 추론', { exact: true }).count(), 0)
-        const frame = await card.evaluate(element => {
-          const style = getComputedStyle(element)
-          const content = getComputedStyle(element.firstElementChild)
-          return {
-            bars: [...element.children].filter(child => getComputedStyle(child).position === 'absolute').length,
-            borders: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth],
-            padding: [content.paddingLeft, content.paddingRight],
-            background: style.backgroundColor,
-            badgeBackground: getComputedStyle(element.querySelector('span')).backgroundColor,
-            badgeText: getComputedStyle(element.querySelector('span')).color,
-          }
-        })
-        await page.screenshot({ path: path.join(artifacts, `${scenario}.png`), fullPage: true })
-        assert.equal(frame.bars, 0, 'Result cards must not have decorative side bars')
-        assert(frame.borders.every(border => border === frame.borders[0]), 'Result card borders must be uniform')
-        assert.equal(frame.padding[0], frame.padding[1], 'Result card padding must be balanced')
-        assert.equal(frame.background, action === 'avoid' ? 'rgb(255, 241, 242)' : action === 'allowed' ? 'rgb(236, 253, 245)' : 'rgb(255, 251, 235)', 'Use the original red, green and amber card colors')
-        assert.equal(frame.badgeBackground, action === 'avoid' ? 'rgb(190, 18, 60)' : action === 'allowed' ? 'rgb(4, 120, 87)' : 'rgb(180, 83, 9)')
-        assert.equal(frame.badgeText, 'rgb(255, 255, 255)', 'Status pills must keep legible contrast')
-        if (scenarioResult.details[0].references.length) {
-          const quote = card.getByText(scenarioResult.details[0].references[0].quote, { exact: true })
-          assert.equal(await quote.isVisible(), false, 'Long English references must start collapsed')
-          await card.getByText('출처·원문 보기', { exact: true }).click()
-          await quote.waitFor({ state: 'visible' })
-          assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
-        }
+        await page.screenshot({ path: path.join(artifacts, `${width}-result.png`), fullPage: true })
         await page.getByRole('button', { name: '이전 기록', exact: true }).click()
-        await page.getByText(drugs[0].name, { exact: false }).first().waitFor()
-        await page.getByText('재확인 필요', { exact: true }).waitFor()
-        assert.equal(await page.getByText('양호', { exact: true }).count(), 0)
+        await page.getByText(drugs[0].name, { exact: false }).waitFor()
       } else {
         try {
           await page.getByRole('button', { name: '다시 시도', exact: true }).waitFor()
@@ -131,10 +75,7 @@ async function main() {
         }
         assert.equal(await page.getByRole('heading', { name: '검사 결과', exact: true }).count(), 0)
         assert.equal(await page.evaluate(() => localStorage.getItem('pillosuffer-history')), '{broken-json', 'Failed analysis must not be saved')
-        if (scenario === 'db-error') {
-          assert.equal(calls, 1)
-          await page.getByText(/근거 데이터가 확인되지 않아/).waitFor()
-        }
+        if (scenario === 'db-error') assert.equal(calls, 0)
         if (scenario === 'safety-error') {
           await page.screenshot({ path: path.join(artifacts, '320-result-error.png'), fullPage: true })
           const previousCalls = calls

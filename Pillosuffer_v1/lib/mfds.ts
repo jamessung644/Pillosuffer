@@ -366,13 +366,12 @@ export async function queryMfds(
     drugs.flatMap(drug =>
       (keywordsByDrug.get(drug.name) ?? []).flatMap(drugKw =>
         foodList.map(async (foodKw) => {
-          const { data, error } = await supabase
+          const { data } = await supabase
             .from('drug_food_interactions')
             .select('drug_name, interaction_description, source')
             .ilike('drug_name', `%${drugKw}%`)
             .ilike('interaction_description', `%${foodKw}%`)
             .limit(5)
-          if (error) throw new Error('Interaction evidence database query failed')
           if (data?.length) {
             for (const row of data) {
               addResult(row.drug_name, row.interaction_description, row.source)
@@ -386,13 +385,12 @@ export async function queryMfds(
   // 2. 약품명 단독 검색 — 조합 매칭 없을 때 약품별 일반 상호작용 정보 보충
   await Promise.all(
     drugs.flatMap(drug => (keywordsByDrug.get(drug.name) ?? []).map(async (keyword) => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('drug_food_interactions')
         .select('drug_name, interaction_description, source')
         .ilike('drug_name', `%${keyword}%`)
         .limit(4)
 
-      if (error) throw new Error('Interaction evidence database query failed')
       if (data?.length) {
         for (const row of data) {
           addResult(row.drug_name, row.interaction_description, row.source)

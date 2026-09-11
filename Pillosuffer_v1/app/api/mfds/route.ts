@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('[API/mfds]', error)
-    return NextResponse.json({ code: 'EVIDENCE_UNAVAILABLE', error: '상호작용 근거 데이터베이스를 조회할 수 없어 결과를 생성하지 않았습니다.' }, { status: 503 })
+    return NextResponse.json({ error: 'DrugBank DB 조회 실패' }, { status: 500 })
   }
 }
 
